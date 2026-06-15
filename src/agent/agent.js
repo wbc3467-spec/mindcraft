@@ -423,7 +423,10 @@ export class Agent {
             if (settings.speak) {
                 speak(to_translate, this.prompter.profile.speak_model);
             }
-            if (settings.chat_ingame) {this.bot.chat(message);}
+            if (settings.chat_ingame) {
+                const chatDisplay = message.replace(/!\w+(\([^)]*\))?/g, '').trim();
+                if (chatDisplay) {this.bot.chat(chatDisplay);}
+            }
             sendOutputToServer(this.name, message);
         }
     }

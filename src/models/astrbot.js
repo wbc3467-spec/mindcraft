@@ -82,7 +82,7 @@ function extractLiveStatus(systemMessage) {
                 section = 'inventory';
                 continue;
             }
-            if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!')) {
+            if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!') || t.startsWith('*COMMAND')) {
                 section = 'scan';
                 continue;
             }
@@ -96,7 +96,7 @@ function extractLiveStatus(systemMessage) {
             continue;
         }
         if (section === 'inventory') {
-            if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!')) {
+            if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!') || t.startsWith('*COMMAND')) {
                 section = 'scan';
                 continue;
             }
