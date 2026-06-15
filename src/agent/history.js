@@ -74,7 +74,8 @@ export class History {
             while (this.turns.length > 0 && this.turns[0].role === 'assistant')
                 chunk.push(this.turns.shift()); // remove until turns starts with system/user message
 
-            await this.summarizeMemories(chunk);
+            // Memory summarization disabled - managed by AstrBot session context
+            // await this.summarizeMemories(chunk);
             await this.appendFullHistory(chunk);
         }
     }
