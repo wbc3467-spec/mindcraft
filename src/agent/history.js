@@ -91,7 +91,7 @@ export class History {
                 last_sender: this.agent.last_sender
             };
             writeFileSync(this.memory_fp, JSON.stringify(data, null, 2));
-            console.log('Saved memory to:', this.memory_fp);
+            // console.log('Saved memory to:', this.memory_fp); // silenced
         } catch (error) {
             console.error('Failed to save history:', error);
             throw error;

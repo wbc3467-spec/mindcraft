@@ -61,7 +61,7 @@ export class SelfPrompter {
         console.log('starting self-prompt loop')
         this.loop_active = true;
         let no_command_count = 0;
-        const MAX_NO_COMMAND = 3;
+        const MAX_NO_COMMAND = 30; // increased from 3 to avoid loop stopping on occasional missing commands
         while (!this.interrupt) {
             const msg = `You are self-prompting with the goal: '${this.prompt}'. Your next response MUST contain a command with this syntax: !commandName. Respond:`;
             
@@ -87,7 +87,7 @@ export class SelfPrompter {
     }
 
     update(delta) {
-        // automatically restarts loop
+        // automatically restarts loop (ACTIVE state)
         if (this.state === ACTIVE && !this.loop_active && !this.interrupt) {
             if (this.agent.isIdle())
                 this.idle_time += delta;
@@ -97,6 +97,19 @@ export class SelfPrompter {
             if (this.idle_time >= this.cooldown) {
                 console.log('Restarting self-prompting...');
                 this.startLoop();
+                this.idle_time = 0;
+            }
+        }
+        // Auto-recover from STOPPED state if there's an active goal
+        else if (this.state === STOPPED && this.prompt && !this.loop_active && !this.interrupt) {
+            if (this.agent.isIdle()) {
+                this.idle_time += delta;
+                if (this.idle_time >= this.cooldown * 2) {
+                    console.log('Auto-recovering self-prompt from STOPPED...');
+                    this.state = ACTIVE;
+                    this.idle_time = 0;
+                }
+            } else {
                 this.idle_time = 0;
             }
         }
