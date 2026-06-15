@@ -27,7 +27,7 @@ const settings = {
     ],
 
     "load_memory": false, // load memory from previous session
-    "init_message": "Respond with hello world and your name", // sends to all on spawn
+    "init_message": "!goal(\"探索世界，找点乐子，做点喜欢的事\")", // sends to all on spawn
     "only_chat_with": [], // users that the bots listen to and send general messages to. if empty it will chat publicly
 
     "speak": false,
