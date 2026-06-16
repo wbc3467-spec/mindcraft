@@ -73,8 +73,14 @@ function extractLiveStatus(systemMessage) {
         }
 
         // Capture STATS block (+ ENTITIES + NEARBY_BLOCKS)
+        let skipAgentModes = false;
         if (t === 'STATS' || t === 'ENTITIES' || t === 'NEARBY_BLOCKS') {
             section = 'stats';
+            skipAgentModes = false;
+            // Add section labels so LLM can tell them apart
+            if (t === 'ENTITIES') result.push('[Entities]');
+            else if (t === 'NEARBY_BLOCKS') result.push('[Nearby Blocks]');
+            else result.push('[Stats]');
             continue;
         }
         if (section === 'stats') {
@@ -86,6 +92,22 @@ function extractLiveStatus(systemMessage) {
                 section = 'scan';
                 continue;
             }
+            // Skip Nearby Bot Players
+            if (t.startsWith('- Nearby Bot Players')) continue;
+            // Rename Nearby Human Players to Nearby Player
+            if (t.startsWith('- Nearby Human Players')) {
+                result.push(t.replace('- Nearby Human Players', '- Nearby Player'));
+                continue;
+            }
+            // Skip entire Agent Modes section
+            if (t === 'Agent Modes:' || t.startsWith('Agent Modes:')) {
+                skipAgentModes = true;
+                continue;
+            }
+            if (skipAgentModes) {
+                if (t.startsWith('- ')) continue;
+                skipAgentModes = false; // next line not a mode item, resume
+            }
             result.push(t);
             continue;
         }
@@ -93,6 +115,7 @@ function extractLiveStatus(systemMessage) {
         // Capture INVENTORY block
         if (t === 'INVENTORY') {
             section = 'inventory';
+            result.push('[Inventory]');
             continue;
         }
         if (section === 'inventory') {
@@ -196,14 +219,21 @@ export class AstrBot {
         const liveStatus = extractLiveStatus(systemMessage);
 
         let messageText = '';
-        if (liveStatus) {
-            messageText += '[Current Status]\n' + liveStatus + '\n\n';
+        const isPlayerMessage = (latestRole === 'user');
+        
+        if (isPlayerMessage) {
+            // Player message: send only message itself, no live status, save to history
+            messageText = cleanContent;
+        } else {
+            // AI response: include live status, don't save to history
+            if (liveStatus) {
+                messageText += '[Current Status]\n' + liveStatus + '\n\n';
+            }
+            let roleLabel = 'User';
+            if (latestRole === 'assistant') roleLabel = 'Assistant';
+            else if (latestRole === 'system') roleLabel = 'System';
+            messageText += '[' + roleLabel + '] ' + cleanContent;
         }
-                // Map Mindcraft roles to AstrBot segments
-        let roleLabel = 'User';
-        if (latestRole === 'assistant') roleLabel = 'Assistant';
-        else if (latestRole === 'system') roleLabel = 'System';
-        messageText += '[' + roleLabel + '] ' + cleanContent;
 
         const sessionId = 'mindcraft_' + this.botName;
         const payload = {
@@ -212,7 +242,7 @@ export class AstrBot {
             message: messageText,
             config_name: this.configName,
             enable_streaming: false,
-            _skip_user_history: true,
+            _skip_user_history: isPlayerMessage ? false : true,
         };
 
         return this._callChatApi(payload, stop_seq);

@@ -63,7 +63,7 @@ export class SelfPrompter {
         let no_command_count = 0;
         const MAX_NO_COMMAND = 30; // increased from 3 to avoid loop stopping on occasional missing commands
         while (!this.interrupt) {
-            const msg = `You are self-prompting with the goal: '${this.prompt}'. Your next response MUST contain a command with this syntax: !commandName. Respond:`;
+            const msg = `You are self-prompting with the goal: '${this.prompt}'. You can use commands (!commandName) to act, or just think/observe.`
             
             let used_command;
             try {
