@@ -67,6 +67,41 @@ export const queryList = [
             res += '\n- Nearby Bot Players: ' + (bots.length > 0 ? bots.join(', ') : 'None.');
 
             res += '\n' + agent.bot.modes.getMiniDocs() + '\n';
+
+            // Helper: render a heightmap block
+            function renderZone(label, map, range, step, isHeight) {
+                res += '\n' + label + ' (Z\u2193/X\u2192):';
+                // Build column header
+                let colHeader = '      ';
+                for (let dx = -range; dx <= range; dx += step) {
+                    let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
+                    colHeader += xLabel.padStart(5);
+                }
+                res += '\n' + colHeader;
+                let zIdx = -range;
+                for (let row of map) {
+                    let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
+                    if (isHeight) {
+                        let fmtRow = row.map(h => h >= 0 ? '+' + h : '' + h);
+                        res += '\n' + zLabel.padEnd(5) + fmtRow.join(' ');
+                    } else {
+                        res += '\n' + zLabel.padEnd(5) + row.join(' ');
+                    }
+                    zIdx += step;
+                }
+            }
+            // Core zone (9x9, step=1)
+            let coreTerrain = world.getTerrainHeightmap(bot, 4, 1);
+            renderZone('Core', coreTerrain, 4, 1, false);
+            // Far zone (9x9, step=4)
+            let farTerrain = world.getTerrainHeightmap(bot, 16, 4);
+            renderZone('Far ', farTerrain, 16, 4, false);
+            // Height diff: core
+            let coreHeight = world.getObstacleHeightmap(bot, 4, 1);
+            renderZone('H-Core', coreHeight, 4, 1, true);
+            // Height diff: far
+            let farHeight = world.getObstacleHeightmap(bot, 16, 4);
+            renderZone('H-Far ', farHeight, 16, 4, true);
             return pad(res);
         }
     },

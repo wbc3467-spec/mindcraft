@@ -429,3 +429,76 @@ export function getBiomeName(bot) {
     const biomeId = bot.world.getBiome(bot.entity.position);
     return mc.getAllBiomes()[biomeId].name;
 }
+
+
+export function getTerrainHeightmap(bot, range=2, step=1) {
+    /**
+     * Get a 2D heightmap of the terrain around the bot.
+     * Scans an (range*2+1) x (range*2+1) area around the bot with given step,
+     * finding the highest non-air block at each column from current Y downward.
+     * @param {Bot} bot - The bot to scan around.
+     * @param {number} range - Half-width of the scan area, default 2 (5x5).
+     * @param {number} step - Sampling step, default 1.
+     * @returns {string[][]} - 2D array of block names, each row from Z=-range to Z=+range.
+     * @example
+     * let map = world.getTerrainHeightmap(bot, 2);    // 5x5 fine
+     * let map = world.getTerrainHeightmap(bot, 6, 6); // 3x3 far
+     **/
+    const pos = bot.entity.position;
+    let rows = [];
+    for (let dz = -range; dz <= range; dz += step) {
+        let row = [];
+        for (let dx = -range; dx <= range; dx += step) {
+            let highestBlock = null;
+            for (let dy = -1; dy >= -15; dy--) {
+                let checkPos = pos.offset(dx, dy, dz);
+                let block = bot.blockAt(checkPos);
+                if (block && block.name !== 'air' && block.name !== 'cave_air') {
+                    highestBlock = block.name;
+                    break;
+                }
+            }
+            row.push(highestBlock || 'void');
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+
+export function getObstacleHeightmap(bot, range=2, step=1) {
+    /**
+     * Get a 2D map of obstacle heights relative to the bot's feet.
+     * For each column in an (range*2+1) x (range*2+1) area with given step, finds the
+     * terrain surface height (highest non-air block), then calculates
+     * how many blocks higher/lower it is compared to the bot's current Y.
+     * @param {Bot} bot - The bot to scan around.
+     * @param {number} range - Half-width of the scan area, default 2 (5x5).
+     * @param {number} step - Sampling step, default 1.
+     * @returns {number[][]} - 2D array of height differences (+ = higher, - = lower).
+     * @example
+     * let map = world.getObstacleHeightmap(bot, 4, 1);  // 9x9 fine
+     * let map = world.getObstacleHeightmap(bot, 16, 4); // 9x9 far
+     **/
+    const pos = bot.entity.position;
+    const botY = pos.y;
+    let rows = [];
+    for (let dz = -range; dz <= range; dz += step) {
+        let row = [];
+        for (let dx = -range; dx <= range; dx += step) {
+            let surfaceY = botY;
+            for (let dy = -1; dy >= -15; dy--) {
+                let checkPos = pos.offset(dx, dy, dz);
+                let block = bot.blockAt(checkPos);
+                if (block && block.name !== 'air' && block.name !== 'cave_air') {
+                    surfaceY = botY + dy + 1;
+                    break;
+                }
+            }
+            let diff = Math.round(surfaceY - botY);
+            row.push(diff);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
