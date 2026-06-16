@@ -211,7 +211,13 @@ export class Agent {
             }
         }
         else if (init_message) {
-            await this.handleMessage('system', init_message, 2);
+            // Directly parse !goal("...") to start self-prompting, bypassing LLM execution
+            const goalMatch = init_message.match(/^!goal\(["'](.+?)["']\)/);
+            if (goalMatch) {
+                this.self_prompter.start(goalMatch[1]);
+            } else {
+                await this.handleMessage('system', init_message, 2);
+            }
         }
         else {
             this.openChat("Hello world! I am "+this.name);
