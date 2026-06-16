@@ -40,11 +40,11 @@ export class SelfPrompter {
         if (state == undefined)
             state = STOPPED;
         this.state = state;
-        this.prompt = prompt;
-        if (state !== STOPPED && !prompt)
+        if (prompt) this.prompt = prompt;  // only overwrite if non-empty, prevents losing prompt on null save
+        if (state !== STOPPED && !this.prompt)
             throw new Error('No prompt loaded when self-prompting is active');
         if (state === ACTIVE) {
-            await this.start(prompt);
+            await this.start(this.prompt);
         }
     }
 

@@ -20,6 +20,13 @@ export const queryList = [
             let pos = bot.entity.position;
             // display position to 2 decimal places
             res += `\n- Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
+            // Convert yaw/pitch from radians to degrees and cardinal direction
+            const yawDeg = (bot.entity.yaw * 180 / Math.PI).toFixed(1);
+            const pitchDeg = (bot.entity.pitch * 180 / Math.PI).toFixed(1);
+            const directions = ['South', 'South West', 'West', 'North West', 'North', 'North East', 'East', 'South East'];
+            const dirIdx = Math.round(((bot.entity.yaw % (2*Math.PI)) / (2*Math.PI)) * 8) % 8;
+            const direction = dirIdx >= 0 ? directions[dirIdx] : directions[(dirIdx + 8) % 8];
+            res += `\n- Facing: ${direction} (Yaw: ${yawDeg}°, Pitch: ${pitchDeg}°)`;
             // Gameplay
             res += `\n- Gamemode: ${bot.game.gameMode}`;
             res += `\n- Health: ${Math.round(bot.health)} / 20`;

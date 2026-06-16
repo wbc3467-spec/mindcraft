@@ -199,7 +199,11 @@ export class AstrBot {
         if (liveStatus) {
             messageText += '[Current Status]\n' + liveStatus + '\n\n';
         }
-        messageText += '[' + (latestRole === 'assistant' ? 'Assistant' : 'User') + '] ' + cleanContent;
+                // Map Mindcraft roles to AstrBot segments
+        let roleLabel = 'User';
+        if (latestRole === 'assistant') roleLabel = 'Assistant';
+        else if (latestRole === 'system') roleLabel = 'System';
+        messageText += '[' + roleLabel + '] ' + cleanContent;
 
         const sessionId = 'mindcraft_' + this.botName;
         const payload = {

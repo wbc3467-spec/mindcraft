@@ -86,7 +86,7 @@ export class History {
                 memory: this.memory,
                 turns: this.turns,
                 self_prompting_state: this.agent.self_prompter.state,
-                self_prompt: this.agent.self_prompter.isStopped() ? null : this.agent.self_prompter.prompt,
+                self_prompt: this.agent.self_prompter.prompt || '',  // always save prompt
                 taskStart: this.agent.task.taskStartTime,
                 last_sender: this.agent.last_sender
             };
