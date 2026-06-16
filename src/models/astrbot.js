@@ -211,7 +211,8 @@ export class AstrBot {
             session_id: sessionId,
             message: messageText,
             config_name: this.configName,
-            enable_streaming: false
+            enable_streaming: false,
+            _skip_user_history: true,
         };
 
         return this._callChatApi(payload, stop_seq);
@@ -236,7 +237,8 @@ export class AstrBot {
                 session_id: sessionId,
                 message: messageSegments,
                 config_name: this.configName,
-                enable_streaming: false
+                enable_streaming: false,
+                _skip_user_history: true,
             };
 
             console.log('[AstrBot] Sending vision request for [' + this.botName + ']...');
@@ -250,7 +252,8 @@ export class AstrBot {
                 session_id: sessionId,
                 message: fallbackMsg,
                 config_name: this.configName,
-                enable_streaming: false
+                enable_streaming: false,
+                _skip_user_history: true,
             };
             return await this._callChatApi(payload);
         }
