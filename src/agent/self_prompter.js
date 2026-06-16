@@ -65,7 +65,14 @@ export class SelfPrompter {
         while (!this.interrupt) {
             const msg = `You are self-prompting with the goal: '${this.prompt}'. Your next response MUST contain a command with this syntax: !commandName. Respond:`;
             
-            let used_command = await this.agent.handleMessage('system', msg, -1);
+            let used_command;
+            try {
+                used_command = await this.agent.handleMessage('system', msg, -1);
+            } catch (err) {
+                console.error('Self-prompt loop caught error, continuing:', err.message || err);
+                await new Promise(r => setTimeout(r, this.cooldown));
+                continue;
+            }
             if (!used_command) {
                 no_command_count++;
                 if (no_command_count >= MAX_NO_COMMAND) {
