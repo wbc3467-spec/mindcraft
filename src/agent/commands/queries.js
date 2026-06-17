@@ -144,6 +144,12 @@ export const queryList = [
                 }
                 bz += biomeStep;
             }
+            // Connected space: ground (9x9, step=1)
+            let coreGround = world.getConnectedGround(bot, 4, 1);
+            let coreCeil = world.getConnectedCeiling(bot, 4, 1, coreGround);
+            renderConnected('Ground', coreGround, 4, 1, 'name');
+            renderConnected('HeightDiff', coreGround, 4, 1, 'height');
+            renderConnected('CeilingY', coreCeil, 4, 1, 'ceiling');
             return pad(res);
         }
     },
