@@ -73,21 +73,18 @@ function extractLiveStatus(systemMessage) {
             }
         }
 
-        // Capture STATS block (+ ENTITIES + NEARBY_BLOCKS)
-        if (t === 'STATS' || t === 'ENTITIES' || t === 'NEARBY_BLOCKS') {
-            section = 'stats';
+        // Capture all section headers uniformly
+        if (t === 'STATS' || t === 'NEARBY_ENTITIES' || t === 'NEARBY_BLOCKS' || t === 'INVENTORY') {
+            section = (t === 'INVENTORY') ? 'inventory' : 'stats';
             skipAgentModes = false;
             // Add section labels so LLM can tell them apart
-            if (t === 'ENTITIES') result.push('[Entities]');
+            if (t === 'NEARBY_ENTITIES') result.push('[Entities]');
             else if (t === 'NEARBY_BLOCKS') result.push('[Nearby Blocks]');
+            else if (t === 'INVENTORY') result.push('[Inventory]');
             else result.push('[Stats]');
             continue;
         }
         if (section === 'stats') {
-            if (t === 'INVENTORY') {
-                section = 'inventory';
-                continue;
-            }
             if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!') || t.startsWith('*COMMAND')) {
                 section = 'scan';
                 continue;
@@ -114,12 +111,7 @@ function extractLiveStatus(systemMessage) {
             continue;
         }
 
-        // Capture INVENTORY block
-        if (t === 'INVENTORY') {
-            section = 'inventory';
-            result.push('[Inventory]');
-            continue;
-        }
+
         if (section === 'inventory') {
             if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!') || t.startsWith('*COMMAND')) {
                 section = 'scan';
