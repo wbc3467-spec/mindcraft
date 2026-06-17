@@ -36,6 +36,24 @@ export function containsCommand(message) {
     return null;
 }
 
+/**
+ * Extract all commands from a message, supports multiple commands.
+ * @param {string} message - A message containing zero or more commands.
+ * @returns {{name:string, fullMatch:string}[]} Array of {name, fullMatch} objects.
+ */
+export function extractAllCommands(message) {
+    const commands = [];
+    const regex = new RegExp(commandRegex.source, 'g');
+    let match;
+    while ((match = regex.exec(message)) !== null) {
+        commands.push({
+            name: '!' + match[1],
+            fullMatch: match[0]
+        });
+    }
+    return commands;
+}
+
 export function commandExists(commandName) {
     if (!commandName.startsWith("!"))
         commandName = "!" + commandName;
@@ -242,7 +260,7 @@ export function getCommandDocs(agent) {
     }
     let docs = `\n*COMMAND DOCS\n You can use the following commands to perform actions and get information about the world. 
     Use the commands with the syntax: !commandName or !commandName("arg1", 1.2, ...) if the command takes arguments.\n
-    Do not use codeblocks. Use double quotes for strings. Only use one command in each response, trailing commands and comments will be ignored.\n`;
+    Do not use codeblocks. Use double quotes for strings. You can use multiple commands in one response, they will be executed in order.\n`;
     for (let command of commandList) {
         if (agent.blocked_actions.includes(command.name)) {
             continue;
