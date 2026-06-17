@@ -128,8 +128,7 @@ export const queryList = [
             // Biome grid (9x9, step=16, covers ±64)
             let biomeRange = 64, biomeStep = 16;
             let biomeGrid = world.getBiomeGrid(bot, biomeRange, biomeStep);
-            res += '
-Biome (Z↓/X→):';
+            res += '\nBiome (Z\u2193/X\u2192):';
             let bColHdr = '      ';
             for (let dx = -biomeRange; dx <= biomeRange; dx += biomeStep) {
                 bColHdr += String(dx).padStart(5, ' ');
@@ -138,8 +137,7 @@ Biome (Z↓/X→):';
             let bz = -biomeRange;
             for (const row of biomeGrid) {
                 let rowLabel = String(bz).padStart(4, ' ') + ' ';
-                res += '
-' + rowLabel;
+                res += '\n' + rowLabel;
                 for (const name of row) {
                     let short = name.length > 5 ? name.slice(0, 5) + '.' : name.padEnd(6, ' ');
                     res += short;
@@ -454,15 +452,12 @@ Biome (Z↓/X→):';
             for (let dx = -range; dx <= range; dx += step) {
                 colHeader += String(dx).padStart(colWidth, ' ');
             }
-            res += '
-' + colHeader;
+            res += '\n' + colHeader;
             // Rows
             for (let ri = 0; ri < grid.length; ri++) {
                 let dz = (ri - half) * step;
                 let rowLabel = String(dz).padStart(4, ' ') + '  ';
-                res += '
-' + rowLabel;
-                for (let ci = 0; ci < grid[ri].length; ci++) {
+                res += '\n' + rowLabel;
                     res += grid[ri][ci].padEnd(colWidth, ' ');
                 }
             }
