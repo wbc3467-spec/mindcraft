@@ -493,7 +493,7 @@ export const queryList = [
         perform: function (agent, range=4, step=1) {
             let bot = agent.bot;
             let ground = world.getConnectedGround(bot, range, step);
-            let res = 'Ground (Z↓/X→):';
+            let res = 'Ground(附近地表方块名称, Z↓/X→):';
             let colHeader = '      ';
             for (let dx = -range; dx <= range; dx += step) {
                 let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
@@ -525,7 +525,7 @@ export const queryList = [
             let botY = Math.floor(bot.entity.position.y);
             let ground = world.getConnectedGround(bot, range, step);
             let ceil = world.getConnectedCeiling(bot, range, step, ground);
-            let res = 'HeightDiff (Z↓/X→):';
+            let res = 'HeightDiff(地表相对玩家脚底高度差, Z↓/X→):';
             let colHeader = '      ';
             for (let dx = -range; dx <= range; dx += step) {
                 let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
@@ -542,7 +542,7 @@ export const queryList = [
                 res += '\n' + zLabel.padEnd(5) + vals.join(' ');
                 zIdx += step;
             }
-            res += '\nCeilingY (Z↓/X→): [头顶空间, -=无限高/露天]';
+            res += '\nCeiling(地表以上最近实体方块相对高度, Z↓/X→):';
             let colHeader2 = '      ';
             for (let dx = -range; dx <= range; dx += step) {
                 let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);

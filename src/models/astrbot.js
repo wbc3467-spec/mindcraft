@@ -239,7 +239,6 @@ export class AstrBot {
             config_name: this.configName,
             enable_streaming: false,
             _skip_user_history: isPlayerMessage ? false : true,
-            _skip_memory_inject: isPlayerMessage ? false : true,
             _is_mindcraft_system: isPlayerMessage ? undefined : true,
         };
 
