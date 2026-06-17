@@ -33,6 +33,14 @@ export const queryList = [
             // Show recent damage info (within last 30s)
             if (bot.lastDamageTime && Date.now() - bot.lastDamageTime < 30000) {
                 res += `\n- Last hit: -${bot.lastDamageTaken} hp (by ${bot.lastDamageSource || 'unknown'})`;
+                let logs = bot.lastDamageLog || [];
+                if (logs.length > 1) {
+                    let parts = logs.map(e => `-${e.amount} (${e.source})`);
+                    res += `\n- Damage history: [${parts.join(', ')}]`;
+                }
+                res += `\n- Total since last check: -${bot.lastDamageTotal || 0} hp`;
+                bot.lastDamageLog = [];
+                bot.lastDamageTotal = 0;
             }
             res += `\n- Hunger: ${Math.round(bot.food)} / 20`;
             res += `\n- Biome: ${world.getBiomeName(bot)}`;

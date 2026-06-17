@@ -454,18 +454,23 @@ export class Agent {
         let prev_health = this.bot.health;
         this.bot.lastDamageTime = 0;
         this.bot.lastDamageTaken = 0;
+        this.bot.lastDamageTotal = 0;
         this.bot.lastDamageSource = 'unknown';
+        this.bot.lastDamageLog = [];
         this.bot.on('health', () => {
             if (this.bot.health < prev_health) {
                 this.bot.lastDamageTime = Date.now();
-                this.bot.lastDamageTaken = prev_health - this.bot.health;
+                let dmg = prev_health - this.bot.health;
+                this.bot.lastDamageTaken = dmg;
+                this.bot.lastDamageTotal += dmg;
+                this.bot.lastDamageLog = this.bot.lastDamageLog || [];
                 // Try to find attacker
                 try {
                     // First check nearby hostile mobs
                     let attacker = world.getNearestEntityWhere(this.bot, e => isHostile(e), 16);
                     if (!attacker) {
-                        // Check nearby players
-                        let players = Object.values(this.bot.players).filter(p => p.entity);
+                        // Check nearby players (exclude self)
+                        let players = Object.values(this.bot.players).filter(p => p.entity && p.username !== this.bot.username);
                         let nearestPlayer = null, minDist = Infinity;
                         for (let p of players) {
                             let d = this.bot.entity.position.distanceTo(p.entity.position);
@@ -480,6 +485,12 @@ export class Agent {
                         this.bot.lastDamageSource = attacker.name || attacker.type || 'mob';
                     }
                 } catch { this.bot.lastDamageSource = 'unknown'; }
+                // Log this damage event
+                this.bot.lastDamageLog.push({
+                    source: this.bot.lastDamageSource,
+                    amount: dmg,
+                    time: Date.now()
+                });
             }
             prev_health = this.bot.health;
         });
