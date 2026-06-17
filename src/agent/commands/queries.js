@@ -29,7 +29,11 @@ export const queryList = [
             res += `\n- Facing: ${direction} (Yaw: ${yawDeg}°, Pitch: ${pitchDeg}°)`;
             // Gameplay
             res += `\n- Gamemode: ${bot.game.gameMode}`;
-            res += `\n- Health: ${Math.round(bot.health)} / 20`;\n            // Show recent damage info (within last 30s)\n            if (bot.lastDamageTime && Date.now() - bot.lastDamageTime < 30000) {\n                res += `\n- Last hit: -${bot.lastDamageTaken} hp (by ${bot.lastDamageSource || 'unknown'})`;\n            }
+            res += `\n- Health: ${Math.round(bot.health)} / 20`;
+            // Show recent damage info (within last 30s)
+            if (bot.lastDamageTime && Date.now() - bot.lastDamageTime < 30000) {
+                res += `\n- Last hit: -${bot.lastDamageTaken} hp (by ${bot.lastDamageSource || 'unknown'})`;
+            }
             res += `\n- Hunger: ${Math.round(bot.food)} / 20`;
             res += `\n- Biome: ${world.getBiomeName(bot)}`;
             let weather = "Clear";
