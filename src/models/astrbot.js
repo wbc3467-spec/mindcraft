@@ -48,6 +48,7 @@ function extractLiveStatus(systemMessage) {
     const lines = systemMessage.split('\n');
     const result = [];
     let section = 'scan';
+    let skipAgentModes = false;
 
     for (const line of lines) {
         const t = line.trim();
@@ -73,7 +74,6 @@ function extractLiveStatus(systemMessage) {
         }
 
         // Capture STATS block (+ ENTITIES + NEARBY_BLOCKS)
-        let skipAgentModes = false;
         if (t === 'STATS' || t === 'ENTITIES' || t === 'NEARBY_BLOCKS') {
             section = 'stats';
             skipAgentModes = false;
@@ -94,6 +94,8 @@ function extractLiveStatus(systemMessage) {
             }
             // Skip Nearby Bot Players
             if (t.startsWith('- Nearby Bot Players')) continue;
+            // Skip Gamemode
+            if (t.startsWith('- Gamemode:')) continue;
             // Rename Nearby Human Players to Nearby Player
             if (t.startsWith('- Nearby Human Players')) {
                 result.push(t.replace('- Nearby Human Players', '- Nearby Player'));
