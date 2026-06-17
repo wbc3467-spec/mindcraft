@@ -521,9 +521,11 @@ export function getConnectedCeiling(bot, range=2, step=1, groundMap) {
                 continue;
             }
             let ceilY = null;
-            // Scan upward from ground.y + 1
+            let dx = (ci - Math.floor(groundMap[ri].length / 2)) * step;
+            // Scan upward from ground.y + 1 using absolute Y (not botY)
             for (let dy = 1; dy <= 64; dy++) {
-                let checkPos = pos.offset((ci - Math.floor(groundMap[ri].length / 2)) * step, dy, dz);
+                let checkY = g.y + dy;
+                let checkPos = pos.offset(dx, checkY - Math.floor(pos.y), dz);
                 let block = bot.blockAt(checkPos);
                 if (block && block.name !== 'air' && block.name !== 'cave_air') {
                     ceilY = g.y + dy;

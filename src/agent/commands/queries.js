@@ -120,12 +120,13 @@ export const queryList = [
                         let val = data[ri][ci];
                         if (type === 'name') {
                             let name = val.name || val;
-                            vals.push(name.length > 6 ? name.slice(0, 6) + '.' : name.padEnd(7, ' '));
+                            vals.push(name.padEnd(24, ' ').slice(0, 24));
                         } else if (type === 'height') {
                             let diff = val.y - botY;
                             vals.push(diff >= 0 ? '+' + diff : '' + diff);
                         } else if (type === 'ceiling') {
-                            vals.push(val !== null && val !== undefined ? '' + val : '   -');
+                            let diff = val !== null && val !== undefined ? val - botY : null;
+                            vals.push(diff !== null ? (diff >= 0 ? '+' + diff : '' + diff).padStart(4, ' ') : '   -');
                         }
                     }
                     res += '\n' + zLabel.padEnd(5) + vals.join(' ');
@@ -147,17 +148,20 @@ export const queryList = [
                 let rowLabel = String(bz).padStart(4, ' ') + ' ';
                 res += '\n' + rowLabel;
                 for (const name of row) {
-                    let short = name.length > 5 ? name.slice(0, 5) + '.' : name.padEnd(6, ' ');
-                    res += short;
+                    res += name.padEnd(22, ' ').slice(0, 22);
                 }
                 bz += biomeStep;
             }
             // Connected space: ground (9x9, step=1)
-            let coreGround = world.getConnectedGround(bot, 4, 1);
-            let coreCeil = world.getConnectedCeiling(bot, 4, 1, coreGround);
+            try {
+                let coreGround = world.getConnectedGround(bot, 4, 1);
+                let coreCeil = world.getConnectedCeiling(bot, 4, 1, coreGround);
             renderConnected('Ground', coreGround, 4, 1, 'name');
             renderConnected('HeightDiff', coreGround, 4, 1, 'height');
             renderConnected('CeilingY', coreCeil, 4, 1, 'ceiling');
+            } catch (e) {
+                res += '\n[Connected space error: ' + e.message + ']';
+            }
             return pad(res);
         }
     },
@@ -501,7 +505,7 @@ export const queryList = [
                 let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
                 let vals = row.map(g => {
                     let name = g.name || 'void';
-                    return name.length > 6 ? name.slice(0, 6) + '.' : name.padEnd(7, ' ');
+                    return name.padEnd(24, ' ').slice(0, 24);
                 });
                 res += '\n' + zLabel.padEnd(5) + vals.join(' ');
                 zIdx += step;
@@ -538,7 +542,7 @@ export const queryList = [
                 res += '\n' + zLabel.padEnd(5) + vals.join(' ');
                 zIdx += step;
             }
-            res += '\nCeilingY (Z↓/X→):';
+            res += '\nCeilingY (Z↓/X→): [头顶空间, -=无限高/露天]';
             let colHeader2 = '      ';
             for (let dx = -range; dx <= range; dx += step) {
                 let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
@@ -548,7 +552,7 @@ export const queryList = [
             zIdx = -range;
             for (let row of ceil) {
                 let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
-                let vals = row.map(y => y !== null && y !== undefined ? '' + y : '   -');
+                let vals = row.map(y => y !== null && y !== undefined ? (y - botY >= 0 ? '+' + (y - botY) : '' + (y - botY)).padStart(4, ' ') : '   -');
                 res += '\n' + zLabel.padEnd(5) + vals.join(' ');
                 zIdx += step;
             }
