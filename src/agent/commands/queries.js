@@ -458,6 +458,7 @@ export const queryList = [
                 let dz = (ri - half) * step;
                 let rowLabel = String(dz).padStart(4, ' ') + '  ';
                 res += '\n' + rowLabel;
+                for (let ci = 0; ci < grid[ri].length; ci++) {
                     res += grid[ri][ci].padEnd(colWidth, ' ');
                 }
             }
