@@ -3,7 +3,8 @@ import { Coder } from './coder.js';
 import { VisionInterpreter } from './vision/vision_interpreter.js';
 import { Prompter } from '../models/prompter.js';
 import { initModes } from './modes.js';
-import { initBot } from '../utils/mcdata.js';
+import { initBot, isHostile } from '../utils/mcdata.js';
+import * as world from './library/world.js';
 import { containsCommand, commandExists, executeCommand, truncCommandMessage, isAction, blacklistCommands } from './commands/index.js';
 import { ActionManager } from './action_manager.js';
 import { NPCContoller } from './npc/controller.js';
@@ -453,10 +454,32 @@ export class Agent {
         let prev_health = this.bot.health;
         this.bot.lastDamageTime = 0;
         this.bot.lastDamageTaken = 0;
+        this.bot.lastDamageSource = 'unknown';
         this.bot.on('health', () => {
             if (this.bot.health < prev_health) {
                 this.bot.lastDamageTime = Date.now();
                 this.bot.lastDamageTaken = prev_health - this.bot.health;
+                // Try to find attacker
+                try {
+                    // First check nearby hostile mobs
+                    let attacker = world.getNearestEntityWhere(this.bot, e => isHostile(e), 16);
+                    if (!attacker) {
+                        // Check nearby players
+                        let players = Object.values(this.bot.players).filter(p => p.entity);
+                        let nearestPlayer = null, minDist = Infinity;
+                        for (let p of players) {
+                            let d = this.bot.entity.position.distanceTo(p.entity.position);
+                            if (d < minDist) { minDist = d; nearestPlayer = p; }
+                        }
+                        if (nearestPlayer && minDist < 8) {
+                            this.bot.lastDamageSource = 'player ' + nearestPlayer.username;
+                        } else {
+                            this.bot.lastDamageSource = 'environment';
+                        }
+                    } else {
+                        this.bot.lastDamageSource = attacker.name || attacker.type || 'mob';
+                    }
+                } catch { this.bot.lastDamageSource = 'unknown'; }
             }
             prev_health = this.bot.health;
         });

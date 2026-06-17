@@ -29,7 +29,7 @@ export const queryList = [
             res += `\n- Facing: ${direction} (Yaw: ${yawDeg}°, Pitch: ${pitchDeg}°)`;
             // Gameplay
             res += `\n- Gamemode: ${bot.game.gameMode}`;
-            res += `\n- Health: ${Math.round(bot.health)} / 20`;
+            res += `\n- Health: ${Math.round(bot.health)} / 20`;\n            // Show recent damage info (within last 30s)\n            if (bot.lastDamageTime && Date.now() - bot.lastDamageTime < 30000) {\n                res += `\n- Last hit: -${bot.lastDamageTaken} hp (by ${bot.lastDamageSource || 'unknown'})`;\n            }
             res += `\n- Hunger: ${Math.round(bot.food)} / 20`;
             res += `\n- Biome: ${world.getBiomeName(bot)}`;
             let weather = "Clear";
@@ -90,18 +90,58 @@ export const queryList = [
                     zIdx += step;
                 }
             }
-            // Core zone (9x9, step=1)
-            let coreTerrain = world.getTerrainHeightmap(bot, 4, 1);
-            renderZone('Core', coreTerrain, 4, 1, false);
-            // Far zone (9x9, step=4)
-            let farTerrain = world.getTerrainHeightmap(bot, 16, 4);
-            renderZone('Far ', farTerrain, 16, 4, false);
-            // Height diff: core
-            let coreHeight = world.getObstacleHeightmap(bot, 4, 1);
-            renderZone('H-Core', coreHeight, 4, 1, true);
-            // Height diff: far
-            let farHeight = world.getObstacleHeightmap(bot, 16, 4);
-            renderZone('H-Far ', farHeight, 16, 4, true);
+            // Helper: render connected ground/ceiling data
+            function renderConnected(label, data, range, step, type) {
+                res += '\n' + label + ' (Z\u2193/X\u2192):';
+                let colHeader = '      ';
+                for (let dx = -range; dx <= range; dx += step) {
+                    let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
+                    colHeader += xLabel.padStart(5);
+                }
+                res += '\n' + colHeader;
+                let botY = Math.floor(bot.entity.position.y);
+                let zIdx = -range;
+                for (let ri = 0; ri < data.length; ri++) {
+                    let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
+                    let vals = [];
+                    for (let ci = 0; ci < data[ri].length; ci++) {
+                        let val = data[ri][ci];
+                        if (type === 'name') {
+                            let name = val.name || val;
+                            vals.push(name.length > 6 ? name.slice(0, 6) + '.' : name.padEnd(7, ' '));
+                        } else if (type === 'height') {
+                            let diff = val.y - botY;
+                            vals.push(diff >= 0 ? '+' + diff : '' + diff);
+                        } else if (type === 'ceiling') {
+                            vals.push(val !== null && val !== undefined ? '' + val : '   -');
+                        }
+                    }
+                    res += '\n' + zLabel.padEnd(5) + vals.join(' ');
+                    zIdx += step;
+                }
+            }
+
+            // Biome grid (9x9, step=16, covers ±64)
+            let biomeRange = 64, biomeStep = 16;
+            let biomeGrid = world.getBiomeGrid(bot, biomeRange, biomeStep);
+            res += '
+Biome (Z↓/X→):';
+            let bColHdr = '      ';
+            for (let dx = -biomeRange; dx <= biomeRange; dx += biomeStep) {
+                bColHdr += String(dx).padStart(5, ' ');
+            }
+            res += bColHdr;
+            let bz = -biomeRange;
+            for (const row of biomeGrid) {
+                let rowLabel = String(bz).padStart(4, ' ') + ' ';
+                res += '
+' + rowLabel;
+                for (const name of row) {
+                    let short = name.length > 5 ? name.slice(0, 5) + '.' : name.padEnd(6, ' ');
+                    res += short;
+                }
+                bz += biomeStep;
+            }
             return pad(res);
         }
     },
@@ -384,6 +424,121 @@ export const queryList = [
         description: 'Lists all available commands and their descriptions.',
         perform: async function (agent) {
             return getCommandDocs(agent);
+        }
+    },
+    {
+        name: '!biomes',
+        description: 'Get a 2D grid of biome names around the bot (nxn, custom range & step).',
+        perform: function (agent, range, step) {
+            range = range || 4;
+            step = step || 1;
+            let bot = agent.bot;
+            let grid = world.getBiomeGrid(bot, range, step);
+            let res = 'BIOME_GRID';
+            let size = grid.length;
+            let half = Math.floor(size / 2);
+            // Find max biome name length for alignment
+            let maxLen = 0;
+            for (let row of grid) {
+                for (let name of row) {
+                    if (name.length > maxLen) maxLen = name.length;
+                }
+            }
+            let colWidth = maxLen + 1;
+            // Column header
+            let colHeader = 'Z\\X '.padEnd(6, ' ');
+            for (let dx = -range; dx <= range; dx += step) {
+                colHeader += String(dx).padStart(colWidth, ' ');
+            }
+            res += '
+' + colHeader;
+            // Rows
+            for (let ri = 0; ri < grid.length; ri++) {
+                let dz = (ri - half) * step;
+                let rowLabel = String(dz).padStart(4, ' ') + '  ';
+                res += '
+' + rowLabel;
+                for (let ci = 0; ci < grid[ri].length; ci++) {
+                    res += grid[ri][ci].padEnd(colWidth, ' ');
+                }
+            }
+            return pad(res);
+        }
+    },
+    {
+        name: '!terrain',
+        description: 'Get a 2D grid of ground block names in the connected space (nxn, custom range & step).',
+        params: {
+            range: { type: 'int', description: 'Half-width of scan area, default 4 (9x9).', optional: true, default: 4 },
+            step: { type: 'int', description: 'Sampling step, default 1.', optional: true, default: 1 }
+        },
+        perform: function (agent, range=4, step=1) {
+            let bot = agent.bot;
+            let ground = world.getConnectedGround(bot, range, step);
+            let res = 'Ground (Z↓/X→):';
+            let colHeader = '      ';
+            for (let dx = -range; dx <= range; dx += step) {
+                let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
+                colHeader += xLabel.padStart(5);
+            }
+            res += '\n' + colHeader;
+            let zIdx = -range;
+            for (let row of ground) {
+                let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
+                let vals = row.map(g => {
+                    let name = g.name || 'void';
+                    return name.length > 6 ? name.slice(0, 6) + '.' : name.padEnd(7, ' ');
+                });
+                res += '\n' + zLabel.padEnd(5) + vals.join(' ');
+                zIdx += step;
+            }
+            return pad(res);
+        }
+    },
+    {
+        name: '!height',
+        description: 'Get 2D grids of height difference (relative to bot) and ceiling Y in the connected space.',
+        params: {
+            range: { type: 'int', description: 'Half-width of scan area, default 4 (9x9).', optional: true, default: 4 },
+            step: { type: 'int', description: 'Sampling step, default 1.', optional: true, default: 1 }
+        },
+        perform: function (agent, range=4, step=1) {
+            let bot = agent.bot;
+            let botY = Math.floor(bot.entity.position.y);
+            let ground = world.getConnectedGround(bot, range, step);
+            let ceil = world.getConnectedCeiling(bot, range, step, ground);
+            let res = 'HeightDiff (Z↓/X→):';
+            let colHeader = '      ';
+            for (let dx = -range; dx <= range; dx += step) {
+                let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
+                colHeader += xLabel.padStart(5);
+            }
+            res += '\n' + colHeader;
+            let zIdx = -range;
+            for (let row of ground) {
+                let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
+                let vals = row.map(g => {
+                    let diff = g.y - botY;
+                    return diff >= 0 ? '+' + diff : '' + diff;
+                });
+                res += '\n' + zLabel.padEnd(5) + vals.join(' ');
+                zIdx += step;
+            }
+            res += '\nCeilingY (Z↓/X→):';
+            let colHeader2 = '      ';
+            for (let dx = -range; dx <= range; dx += step) {
+                let xLabel = dx < 0 ? 'x' + dx : (dx === 0 ? ' x0' : 'x+' + dx);
+                colHeader2 += xLabel.padStart(5);
+            }
+            res += '\n' + colHeader2;
+            zIdx = -range;
+            for (let row of ceil) {
+                let zLabel = zIdx < 0 ? 'z' + zIdx : (zIdx === 0 ? 'z 0' : 'z+' + zIdx);
+                let vals = row.map(y => y !== null && y !== undefined ? '' + y : '   -');
+                res += '\n' + zLabel.padEnd(5) + vals.join(' ');
+                zIdx += step;
+            }
+            return pad(res);
         }
     },
 ];

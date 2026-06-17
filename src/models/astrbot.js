@@ -93,6 +93,8 @@ function extractLiveStatus(systemMessage) {
             if (t.startsWith('- Nearby Bot Players')) continue;
             // Skip Gamemode
             if (t.startsWith('- Gamemode:')) continue;
+            // Skip Block at Head
+            if (t.startsWith('- Block at Head:')) continue;
             // Rename Nearby Human Players to Nearby Player
             if (t.startsWith('- Nearby Human Players')) {
                 result.push(t.replace('- Nearby Human Players', '- Nearby Player'));

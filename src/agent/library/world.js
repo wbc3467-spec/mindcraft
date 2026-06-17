@@ -418,6 +418,125 @@ export function shouldPlaceTorch(bot) {
     return false;
 }
 
+export function getBiomeGrid(bot, range=2, step=1) {
+    /**
+     * Get a 2D grid of biome names around the bot.
+     * Scans an (range*2+1) x (range*2+1) area with given step.
+     * @param {Bot} bot - The bot to scan around.
+     * @param {number} range - Half-width of the scan area, default 2 (5x5).
+     * @param {number} step - Sampling step, default 1.
+     * @returns {string[][]} - 2D array of biome names.
+     * @example
+     * let grid = world.getBiomeGrid(bot, 4, 1);  // 9x9 fine
+     * let grid = world.getBiomeGrid(bot, 16, 4); // 9x9 far
+     **/
+    const pos = bot.entity.position;
+    let rows = [];
+    for (let dz = -range; dz <= range; dz += step) {
+        let row = [];
+        for (let dx = -range; dx <= range; dx += step) {
+            let checkPos = pos.offset(dx, 0, dz);
+            let biomeId = bot.world.getBiome(checkPos);
+            let biomeName = mc.getAllBiomes()[biomeId].name;
+            row.push(biomeName);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+
+export function getConnectedGround(bot, range=2, step=1) {
+    /**
+     * Get a 2D grid of ground block info in the connected space around the bot.
+     * For each column, checks whether the block at bot's Y is air or solid:
+     *   - If air: scans downward to find the nearest non-air block (ground)
+     *   - If solid: scans upward to find the nearest air block's floor (ground)
+     * @param {Bot} bot - The bot to scan around.
+     * @param {number} range - Half-width of the scan area, default 2 (5x5).
+     * @param {number} step - Sampling step, default 1.
+     * @returns {{name:string, y:number}[][]} - 2D array of {name, y} for each column.
+     **/
+    const pos = bot.entity.position;
+    const botY = Math.floor(pos.y);
+    let rows = [];
+    for (let dz = -range; dz <= range; dz += step) {
+        let row = [];
+        for (let dx = -range; dx <= range; dx += step) {
+            let checkPos = pos.offset(dx, 0, dz);
+            let block = bot.blockAt(checkPos);
+            let groundInfo = {name: 'void', y: -64};
+            if (block && block.name !== 'air' && block.name !== 'cave_air') {
+                // Solid at bot Y → scan upward to find surface
+                for (let dy = 1; dy <= 64; dy++) {
+                    let upPos = pos.offset(dx, dy, dz);
+                    let upBlock = bot.blockAt(upPos);
+                    if (!upBlock || (upBlock.name === 'air' || upBlock.name === 'cave_air')) {
+                        // Found the surface (last solid block below this air)
+                        groundInfo.name = block.name;
+                        groundInfo.y = Math.floor(botY + dy - 1);
+                        break;
+                    }
+                    block = upBlock; // continue scanning upward
+                }
+            } else {
+                // Air at bot Y → scan downward to find ground
+                for (let dy = -1; dy >= -64; dy--) {
+                    let downPos = pos.offset(dx, dy, dz);
+                    let downBlock = bot.blockAt(downPos);
+                    if (downBlock && downBlock.name !== 'air' && downBlock.name !== 'cave_air') {
+                        groundInfo.name = downBlock.name;
+                        groundInfo.y = Math.floor(botY + dy);
+                        break;
+                    }
+                }
+            }
+            row.push(groundInfo);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+
+export function getConnectedCeiling(bot, range=2, step=1, groundMap) {
+    /**
+     * Get a 2D grid of ceiling Y for each column, based on the ground map.
+     * Scans upward from each ground position to find the nearest solid block (ceiling).
+     * @param {Bot} bot - The bot to scan around.
+     * @param {number} range - Half-width of the scan area.
+     * @param {number} step - Sampling step.
+     * @param {{name:string, y:number}[][]} groundMap - Output from getConnectedGround().
+     * @returns {(number|null)[][]} - 2D array of ceiling Y, or null if no ceiling.
+     **/
+    const pos = bot.entity.position;
+    let rows = [];
+    for (let ri = 0; ri < groundMap.length; ri++) {
+        let row = [];
+        let dz = (ri - Math.floor(groundMap.length / 2)) * step;
+        for (let ci = 0; ci < groundMap[ri].length; ci++) {
+            let g = groundMap[ri][ci];
+            if (g.name === 'void') {
+                row.push(null);
+                continue;
+            }
+            let ceilY = null;
+            // Scan upward from ground.y + 1
+            for (let dy = 1; dy <= 64; dy++) {
+                let checkPos = pos.offset((ci - Math.floor(groundMap[ri].length / 2)) * step, dy, dz);
+                let block = bot.blockAt(checkPos);
+                if (block && block.name !== 'air' && block.name !== 'cave_air') {
+                    ceilY = g.y + dy;
+                    break;
+                }
+            }
+            row.push(ceilY);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
 export function getBiomeName(bot) {
     /**
      * Get the name of the biome the bot is in.
