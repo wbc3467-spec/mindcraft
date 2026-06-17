@@ -240,6 +240,7 @@ export class AstrBot {
             enable_streaming: false,
             _skip_user_history: isPlayerMessage ? false : true,
             _skip_memory_inject: isPlayerMessage ? false : true,
+            _is_mindcraft_system: isPlayerMessage ? undefined : true,
         };
 
         return this._callChatApi(payload, stop_seq);
