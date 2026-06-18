@@ -324,6 +324,18 @@ export class Agent {
         this._responding = true;  // 获取锁
         // ===================
         try {
+        // Auto-inject surface height for self-prompt context
+        if (self_prompt) {
+            try {
+                const surfaceHeight = world.getAverageSurfaceHeight(this.bot);
+                if (surfaceHeight !== null) {
+                    await this.history.add('system', `[Auto] Surface Height: ${surfaceHeight.toFixed(1)}`);
+                }
+            } catch (e) {
+                // silently skip
+            }
+        }
+        
         const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || convoManager.responseScheduledFor(source);
         
         let behavior_log = this.bot.modes.flushBehaviorLog().trim();

@@ -20,6 +20,13 @@ export const queryList = [
             let pos = bot.entity.position;
             // display position to 2 decimal places
             res += `\n- Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
+            // Surface height
+            try {
+                const surfaceHeight = world.getAverageSurfaceHeight(bot);
+                if (surfaceHeight !== null) {
+                    res += `\n- Average Surface Height: ${surfaceHeight.toFixed(1)}`;
+                }
+            } catch (e) {}
             // Convert yaw/pitch from radians to degrees and cardinal direction
             const yawDeg = (bot.entity.yaw * 180 / Math.PI).toFixed(1);
             const pitchDeg = (bot.entity.pitch * 180 / Math.PI).toFixed(1);
@@ -90,15 +97,6 @@ export const queryList = [
 
             res += '\n' + agent.bot.modes.getMiniDocs() + '\n';
 
-            // Average surface height (scan ±16, step=2)
-            try {
-                const avgSurface = world.getAverageSurfaceHeight(bot);
-                if (avgSurface !== null) {
-                    res += `\n- Average Surface Height: ${avgSurface.toFixed(1)}`;
-                }
-            } catch (e) {
-                // silently skip
-            }
 
             // Helper: render a heightmap block
             function renderZone(label, map, range, step, isHeight) {
