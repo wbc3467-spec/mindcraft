@@ -45,6 +45,8 @@ export class Agent {
         this.npc = new NPCContoller(this);
         this.memory_bank = new MemoryBank();
         this.self_prompter = new SelfPrompter(this);
+        this._responding = false;  // 互斥锁，防止多个 prompt 源同时处理
+        this._pendingMsg = "";    // 锁被占时合并的玩家消息缓存
         convoManager.initAgent(this);
         await this.prompter.initExamples();
 
@@ -309,6 +311,19 @@ export class Agent {
         message = await handleEnglishTranslation(message);
         console.log('received message from', source, ':', message);
 
+        // === 互斥锁检查 ===
+        if (this._responding) {
+            if (self_prompt) {
+                return 'DROPPED';  // self_prompt 被丢弃，不计数
+            }
+            // 玩家消息 → 合并到 pending（保留顺序）
+            this._pendingMsg += `[${source}] ${message}
+`;
+            return 'PENDING';
+        }
+        this._responding = true;  // 获取锁
+        // ===================
+
         const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || convoManager.responseScheduledFor(source);
         
         let behavior_log = this.bot.modes.flushBehaviorLog().trim();
@@ -411,6 +426,19 @@ export class Agent {
             }
             
             this.history.save();
+        }
+
+        // 释放锁
+        this._responding = false;
+        
+        // 检查是否有 pending 的玩家消息
+        if (this._pendingMsg) {
+            const pendingMsg = this._pendingMsg;
+            this._pendingMsg = '';
+            // 异步处理合并的玩家消息
+            setTimeout(() => {
+                this.handleMessage('__pending__', pendingMsg, 1);
+            }, 0);
         }
 
         return used_command;

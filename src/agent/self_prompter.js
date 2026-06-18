@@ -121,6 +121,11 @@ export class SelfPrompter {
                 await new Promise(r => setTimeout(r, this.cooldown));
                 continue;
             }
+            // DROPPED: 被互斥锁丢弃，不计数
+            if (used_command === 'DROPPED') {
+                await new Promise(r => setTimeout(r, this.cooldown));
+                continue;
+            }
             if (!used_command) {
                 no_command_count++;
                 if (no_command_count >= MAX_NO_COMMAND) {
