@@ -90,6 +90,16 @@ export const queryList = [
 
             res += '\n' + agent.bot.modes.getMiniDocs() + '\n';
 
+            // Average surface height (scan ±16, step=2)
+            try {
+                const avgSurface = world.getAverageSurfaceHeight(bot);
+                if (avgSurface !== null) {
+                    res += `\n- Average Surface Height: ${avgSurface.toFixed(1)}`;
+                }
+            } catch (e) {
+                // silently skip
+            }
+
             // Helper: render a heightmap block
             function renderZone(label, map, range, step, isHeight) {
                 res += '\n' + label + ' (Z\u2193/X\u2192):';
@@ -163,15 +173,7 @@ export const queryList = [
                 bz += biomeStep;
             }
             // Connected space: ground (9x9, step=1)
-            try {
-                let coreGround = world.getConnectedGround(bot, 4, 1);
-                let coreCeil = world.getConnectedCeiling(bot, 4, 1, coreGround);
-            renderConnected('Ground', coreGround, 4, 1, 'name');
-            renderConnected('HeightDiff', coreGround, 4, 1, 'height');
-            renderConnected('CeilingY', coreCeil, 4, 1, 'ceiling');
-            } catch (e) {
-                res += '\n[Connected space error: ' + e.message + ']';
-            }
+            // Connected space info temporarily removed
             return pad(res);
         }
     },

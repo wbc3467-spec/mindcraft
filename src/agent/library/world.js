@@ -499,6 +499,48 @@ export function getConnectedGround(bot, range=2, step=1) {
 }
 
 
+/**
+ * Calculate the average surface height around the bot within a given range.
+ * Scans each column (with optional step) to find the highest non-air block.
+ * @param {Bot} bot - The bot to scan around.
+ * @param {number} range - Half-width of the scan area, default 16 (33x33).
+ * @param {number} step - Sampling step, default 2 (reduces scan density).
+ * @returns {number|null} - Average surface Y, or null if no valid surface found.
+ **/
+export function getAverageSurfaceHeight(bot, range=16, step=2) {
+    const pos = bot.entity.position;
+    let heights = [];
+    for (let dz = -range; dz <= range; dz += step) {
+        for (let dx = -range; dx <= range; dx += step) {
+            let foundY = null;
+            // Scan downward from bot Y + 10 to find surface
+            let startY = Math.floor(pos.y) + 10;
+            for (let dy = startY; dy >= -64; dy--) {
+                let checkPos = pos.offset(dx, dy, dz);
+                let block = bot.blockAt(checkPos);
+                if (block && block.name !== 'air' && block.name !== 'cave_air' &&
+                    block.name !== 'void_air' && !block.name.endsWith('_leaves')) {
+                    foundY = dy;
+                    break;
+                }
+            }
+            if (foundY !== null) {
+                heights.push(foundY);
+            }
+        }
+    }
+    if (heights.length === 0) return null;
+    // Median: robust to outliers (trees, buildings, etc.)
+    heights.sort((a, b) => a - b);
+    let mid = Math.floor(heights.length / 2);
+    if (heights.length % 2 === 1) {
+        return heights[mid];
+    } else {
+        return (heights[mid - 1] + heights[mid]) / 2;
+    }
+}
+
+
 export function getConnectedCeiling(bot, range=2, step=1, groundMap) {
     /**
      * Get a 2D grid of ceiling Y for each column, based on the ground map.
