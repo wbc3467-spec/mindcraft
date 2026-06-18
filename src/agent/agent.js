@@ -284,7 +284,7 @@ export class Agent {
         const self_prompt = source === 'system' || source === this.name;
         const from_other_bot = convoManager.isOtherAgent(source);
 
-        if (!self_prompt && !from_other_bot) { // from user, check for forced commands
+        if (!self_prompt && !from_other_bot && source !== '__pending__') { // from user, check for forced commands (skip pending merged messages)
             const user_command_name = containsCommand(message);
             if (user_command_name) {
                 if (!commandExists(user_command_name)) {
@@ -323,7 +323,7 @@ export class Agent {
         }
         this._responding = true;  // 获取锁
         // ===================
-
+        try {
         const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || convoManager.responseScheduledFor(source);
         
         let behavior_log = this.bot.modes.flushBehaviorLog().trim();
@@ -428,17 +428,19 @@ export class Agent {
             this.history.save();
         }
 
-        // 释放锁
-        this._responding = false;
-        
-        // 检查是否有 pending 的玩家消息
-        if (this._pendingMsg) {
-            const pendingMsg = this._pendingMsg;
-            this._pendingMsg = '';
-            // 异步处理合并的玩家消息
-            setTimeout(() => {
-                this.handleMessage('__pending__', pendingMsg, 1);
-            }, 0);
+        } finally {
+            // 确保锁被释放
+            this._responding = false;
+            
+            // 检查是否有 pending 的玩家消息
+            if (this._pendingMsg) {
+                const pendingMsg = this._pendingMsg;
+                this._pendingMsg = '';
+                // 异步处理合并的玩家消息
+                setTimeout(() => {
+                    this.handleMessage('__pending__', pendingMsg, 1);
+                }, 0);
+            }
         }
 
         return used_command;
