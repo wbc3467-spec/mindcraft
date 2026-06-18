@@ -64,6 +64,22 @@ export class VisionInterpreter {
         }
     }
 
+    // Auto-capture current view (for self-prompt vision)
+    async captureCurrentView() {
+        if (!this.allow_vision || !this.camera || !this.agent.prompter.vision_model.sendVisionRequest) {
+            return null;
+        }
+        try {
+            const filename = await this.camera.capture();
+            if (!filename) return null;
+            const analysis = await this.analyzeImage(filename);
+            return `[Auto Vision] ${analysis}`;
+        } catch (e) {
+            console.warn('[Vision] Auto capture failed:', e.message);
+            return null;
+        }
+    }
+
     async analyzeImage(filename) {
         try {
             const imageBuffer = fs.readFileSync(`${this.fp}/${filename}.jpg`);

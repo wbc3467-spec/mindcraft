@@ -334,6 +334,22 @@ export class Agent {
             } catch (e) {
                 // silently skip
             }
+            // Auto vision every 5 self-prompts
+            if (this.vision_interpreter && this.vision_interpreter.captureCurrentView) {
+                this._visionCounter = (this._visionCounter || 0) + 1;
+                if (this._visionCounter >= 5) {
+                    this._visionCounter = 0;
+                    try {
+                        const visionResult = await this.vision_interpreter.captureCurrentView();
+                        if (visionResult) {
+                            await this.history.add('system', visionResult);
+                            console.log('[Auto Vision] Captured and analyzed current view');
+                        }
+                    } catch (e) {
+                        console.warn('[Auto Vision] Failed:', e.message);
+                    }
+                }
+            }
         }
         
         const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || convoManager.responseScheduledFor(source);
