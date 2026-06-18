@@ -1,6 +1,33 @@
 const STOPPED = 0
 const ACTIVE = 1
 const PAUSED = 2
+
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
+
+function getGoalFp(agent) {
+    return `./bots/${agent.name}/goal.json`;
+}
+
+function saveGoalToFile(agent, prompt, state) {
+    try {
+        const data = { prompt: prompt || '', state: state };
+        writeFileSync(getGoalFp(agent), JSON.stringify(data, null, 2));
+    } catch (err) {
+        console.error('Failed to save goal:', err.message || err);
+    }
+}
+
+function loadGoalFromFile(agent) {
+    try {
+        const fp = getGoalFp(agent);
+        if (!existsSync(fp)) return null;
+        return JSON.parse(readFileSync(fp, 'utf8'));
+    } catch (err) {
+        console.error('Failed to load goal:', err.message || err);
+        return null;
+    }
+}
+
 export class SelfPrompter {
     constructor(agent) {
         this.agent = agent;
@@ -10,6 +37,14 @@ export class SelfPrompter {
         this.prompt = '';
         this.idle_time = 0;
         this.cooldown = 2000;
+
+        // Auto-load goal from file on construction (don't startLoop yet, handleLoad handles that)
+        const saved = loadGoalFromFile(agent);
+        if (saved && saved.prompt) {
+            this.prompt = saved.prompt;
+            this.state = saved.state !== undefined ? saved.state : STOPPED;
+            console.log(`[SelfPrompter] Loaded goal from goal.json: "${this.prompt}" (state: ${this.state})`);
+        }
     }
 
     start(prompt) {
@@ -21,6 +56,7 @@ export class SelfPrompter {
         }
         this.state = ACTIVE;
         this.prompt = prompt;
+        saveGoalToFile(this.agent, this.prompt, this.state);
         this.startLoop();
     }
 
@@ -37,13 +73,20 @@ export class SelfPrompter {
     }
 
     async handleLoad(prompt, state) {
-        if (state == undefined)
-            state = STOPPED;
-        this.state = state;
-        if (prompt) this.prompt = prompt;  // only overwrite if non-empty, prevents losing prompt on null save
-        if (state !== STOPPED && !this.prompt)
+        // Prefer goal.json over memory.json to avoid stale data after crash
+        const saved = loadGoalFromFile(this.agent);
+        if (saved && saved.prompt) {
+            this.prompt = saved.prompt;
+            this.state = saved.state !== undefined ? saved.state : STOPPED;
+            console.log(`[SelfPrompter] handleLoad: using goal.json -> \"${this.prompt}\" (state: ${this.state})`);
+        } else {
+            if (state == undefined) state = STOPPED;
+            this.state = state;
+            if (prompt) this.prompt = prompt;
+        }
+        if (this.state !== STOPPED && !this.prompt)
             throw new Error('No prompt loaded when self-prompting is active');
-        if (state === ACTIVE) {
+        if (this.state === ACTIVE) {
             await this.start(this.prompt);
         }
     }
@@ -51,6 +94,7 @@ export class SelfPrompter {
     setPromptPaused(prompt) {
         this.prompt = prompt;
         this.state = PAUSED;
+        saveGoalToFile(this.agent, this.prompt, this.state);
     }
 
     async startLoop() {
@@ -143,6 +187,7 @@ export class SelfPrompter {
             await this.agent.actions.stop();
         this.stopLoop();
         this.state = STOPPED;
+        saveGoalToFile(this.agent, this.prompt, this.state);
     }
 
     async pause() {
@@ -150,6 +195,7 @@ export class SelfPrompter {
         await this.agent.actions.stop();
         this.stopLoop();
         this.state = PAUSED;
+        saveGoalToFile(this.agent, this.prompt, this.state);
     }
 
     shouldInterrupt(is_self_prompt) { // to be called from handleMessage
