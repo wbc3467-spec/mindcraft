@@ -27,6 +27,29 @@ function runAsAction (actionFn, resume = false, timeout = -1) {
 
 export const actionsList = [
     {
+        name: '!chat',
+        description: 'Send a message to the public chat channel. Use this to communicate with all players.',
+        params: {
+            'contents': { type: 'string', description: 'The message content to send to public chat.' }
+        },
+        perform: async function(agent, contents) {
+            agent.bot.chat(contents);
+            return `Sent to chat: ${contents}`;
+        }
+    },
+    {
+        name: '!whisper',
+        description: 'Send a private whisper message to a specific player. Use this to talk to someone privately.',
+        params: {
+            'target': { type: 'string', description: 'The player name to whisper to.' },
+            'contents': { type: 'string', description: 'The message content to send.' }
+        },
+        perform: async function(agent, target, contents) {
+            agent.bot.whisper(target, contents);
+            return `Whispered to ${target}: ${contents}`;
+        }
+    },
+    {
         name: '!newAction',
         description: 'Perform new and unknown custom behaviors that are not available as a command.', 
         params: {

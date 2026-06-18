@@ -453,8 +453,8 @@ export class Agent {
                 speak(to_translate, this.prompter.profile.speak_model);
             }
             if (settings.chat_ingame) {
-                const chatDisplay = message.replace(/!\w+(\([^)]*\))?/g, '').trim();
-                if (chatDisplay) {this.bot.chat(chatDisplay);}
+                // LLM must use !chat("content") to send messages to public chat
+                // Automatic plain text forwarding is disabled
             }
             sendOutputToServer(this.name, message);
         }
