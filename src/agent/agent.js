@@ -212,12 +212,18 @@ export class Agent {
             }
         }
         else if (init_message) {
-            // Directly parse !goal("...") to start self-prompting, bypassing LLM execution
-            const goalMatch = init_message.match(/^!goal\(["'](.+?)["']\)/);
-            if (goalMatch) {
-                this.self_prompter.start(goalMatch[1]);
+            // Check if a saved goal was already loaded from goal.json during construction
+            if (this.self_prompter.isActive() && this.self_prompter.prompt) {
+                // Saved goal exists and is active — ignore init_message's !goal to avoid overwriting
+                console.log(`[Agent] Ignoring init_message !goal: keeping saved goal "${this.self_prompter.prompt}"`);
             } else {
-                await this.handleMessage('system', init_message, 2);
+                // Directly parse !goal("...") to start self-prompting, bypassing LLM execution
+                const goalMatch = init_message.match(/^!goal\(["'](.+?)["']\)/);
+                if (goalMatch) {
+                    this.self_prompter.start(goalMatch[1]);
+                } else {
+                    await this.handleMessage('system', init_message, 2);
+                }
             }
         }
         else {

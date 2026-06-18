@@ -44,6 +44,10 @@ export class SelfPrompter {
             this.prompt = saved.prompt;
             this.state = saved.state !== undefined ? saved.state : STOPPED;
             console.log(`[SelfPrompter] Loaded goal from goal.json: "${this.prompt}" (state: ${this.state})`);
+            // If state is ACTIVE, start immediately instead of waiting for update() idle recovery
+            if (this.state === ACTIVE) {
+                setTimeout(() => this.start(this.prompt), 0);
+            }
         }
     }
 
