@@ -122,6 +122,17 @@ function extractLiveStatus(systemMessage) {
             result.push(t);
             continue;
         }
+
+        // 提取 [回答规范] section
+        if (t === '[回答规范]' || section === 'reply_rules') {
+            section = 'reply_rules';
+            if (t.startsWith('$EXAMPLES') || t.startsWith('Conversation Begin') || t.startsWith('!') || t.startsWith('*COMMAND')) {
+                section = 'scan';
+                continue;
+            }
+            result.push(t);
+            continue;
+        }
     }
 
     // Fallback: take last meaningful lines

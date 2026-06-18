@@ -137,7 +137,7 @@ export class Prompter {
     async replaceStrings(prompt, messages, examples=null, to_summarize=[], last_goals=null) {
         prompt = prompt.replaceAll('$NAME', this.agent.name);
 
-        if (prompt.includes('$STATS')) {
+                if (prompt.includes('$STATS')) {
             let stats = await getCommand('!stats').perform(this.agent) + '\n';
             stats += await getCommand('!entities').perform(this.agent) + '\n';
             stats += await getCommand('!nearbyBlocks').perform(this.agent);
@@ -147,6 +147,16 @@ export class Prompter {
             let inventory = await getCommand('!inventory').perform(this.agent);
             prompt = prompt.replaceAll('$INVENTORY', inventory);
         }
+        prompt += `
+
+[回答规范]
+1. 通过 !goal 维护长期/中期/短期目标
+   - 长期目标：当前主要任务
+   - 中期目标：完成长期目标的阶段性里程碑
+   - 短期目标：本次要执行的具体动作
+2. 只在回答的结尾给出本次要执行的指令
+   - 前面可以写思考过程和聊天内容
+   - 末尾集中列出本次要执行的 !command`;
         if (prompt.includes('$ACTION')) {
             prompt = prompt.replaceAll('$ACTION', this.agent.actions.currentActionLabel);
         }
