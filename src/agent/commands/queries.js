@@ -275,6 +275,7 @@ export const queryList = [
 
             let nearbyEntities = world.getNearbyEntities(bot);
             let entityCounts = {};
+            let entityClosest = {};  // 每种实体最近的距离和位置
             let villagerIds = [];
             let babyVillagerIds = [];
             let villagerDetails = []; // Store detailed villager info including profession
@@ -287,6 +288,15 @@ export const queryList = [
                     entityCounts[entity.name] = 0;
                 }
                 entityCounts[entity.name]++;
+                
+                // 记录最近实体的相对位置
+                const dx = entity.position.x - bot.entity.position.x;
+                const dy = entity.position.y - bot.entity.position.y;
+                const dz = entity.position.z - bot.entity.position.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                if (!entityClosest[entity.name] || dist < entityClosest[entity.name].dist) {
+                    entityClosest[entity.name] = { dx, dy, dz, dist };
+                }
                 
                 if (entity.name === 'villager') {
                     if (entity.metadata && entity.metadata[16] === 1) {
@@ -303,8 +313,13 @@ export const queryList = [
             }
             
             for (const [entityType, count] of Object.entries(entityCounts)) {
+                let posInfo = '';
+                if (entityClosest[entityType]) {
+                    const p = entityClosest[entityType];
+                    posInfo = ` [closest: x${p.dx >= 0 ? '+' : ''}${p.dx.toFixed(1)}, y${p.dy >= 0 ? '+' : ''}${p.dy.toFixed(1)}, z${p.dz >= 0 ? '+' : ''}${p.dz.toFixed(1)}]`;
+                }
                 if (entityType === 'villager') {
-                    let villagerInfo = `${count} ${entityType}(s)`;
+                    let villagerInfo = `${count} ${entityType}(s)${posInfo}`;
                     if (villagerDetails.length > 0) {
                         const detailStrings = villagerDetails.map(v => `(${v.id}:${v.profession})`);
                         villagerInfo += ` - Adults: ${detailStrings.join(', ')}`;
@@ -314,7 +329,7 @@ export const queryList = [
                     }
                     res += `\n- entities: ${villagerInfo}`;
                 } else {
-                    res += `\n- entities: ${count} ${entityType}(s)`;
+                    res += `\n- entities: ${count} ${entityType}(s)${posInfo}`;
                 }
             }
             

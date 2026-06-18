@@ -176,7 +176,7 @@ export function getNearestBlock(bot, block_type, distance=16) {
 }
 
 
-export function getNearbyEntities(bot, maxDistance=16) {
+export function getNearbyEntities(bot, maxDistance=64) {
     let entities = [];
     for (const entity of Object.values(bot.entities)) {
         const distance = entity.position.distanceTo(bot.entity.position);
