@@ -284,7 +284,7 @@ export class Agent {
         const self_prompt = source === 'system' || source === this.name;
         const from_other_bot = convoManager.isOtherAgent(source);
 
-        if (!self_prompt && !from_other_bot && source !== '__pending__') { // from user, check for forced commands (skip pending merged messages)
+        if (!self_prompt && !from_other_bot && source !== 'player_message') { // from user, check for forced commands (skip pending merged messages)
             const user_command_name = containsCommand(message);
             if (user_command_name) {
                 if (!commandExists(user_command_name)) {
@@ -438,7 +438,7 @@ export class Agent {
                 this._pendingMsg = '';
                 // 异步处理合并的玩家消息
                 setTimeout(() => {
-                    this.handleMessage('__pending__', pendingMsg, 1);
+                    this.handleMessage('player_message', pendingMsg, 1);
                 }, 0);
             }
         }
