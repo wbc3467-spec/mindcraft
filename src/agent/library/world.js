@@ -507,23 +507,39 @@ export function getConnectedGround(bot, range=2, step=1) {
  * @param {number} step - Sampling step, default 2 (reduces scan density).
  * @returns {number|null} - Average surface Y, or null if no valid surface found.
  **/
+function isSurfaceBlock(block) {
+    return block && block.name !== 'air' && block.name !== 'cave_air' &&
+        block.name !== 'void_air' && !block.name.endsWith('_leaves');
+}
+
+/** Binary search: find highest non-air block in a column */
+function findSurfaceY(bot, x, z, low=-64, high=1500) {
+    // Quick check at top
+    let topBlock = bot.blockAt({x, y: high, z});
+    if (!topBlock || topBlock.name === 'air') {
+        // Air at top, binary search for first solid from top
+        let lo = -64, hi = 1500;
+        while (lo < hi) {
+            let mid = Math.ceil((lo + hi) / 2);
+            let block = bot.blockAt({x, y: mid, z});
+            if (isSurfaceBlock(block)) {
+                lo = mid;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        let finalBlock = bot.blockAt({x, y: lo, z});
+        return isSurfaceBlock(finalBlock) ? lo : null;
+    }
+    return high;
+}
+
 export function getAverageSurfaceHeight(bot, range=16, step=2) {
     const pos = bot.entity.position;
     let heights = [];
     for (let dz = -range; dz <= range; dz += step) {
         for (let dx = -range; dx <= range; dx += step) {
-            let foundY = null;
-            // Scan downward from bot Y + 10 to find surface
-            let startY = Math.floor(pos.y) + 10;
-            for (let dy = startY; dy >= -64; dy--) {
-                let checkPos = pos.offset(dx, dy, dz);
-                let block = bot.blockAt(checkPos);
-                if (block && block.name !== 'air' && block.name !== 'cave_air' &&
-                    block.name !== 'void_air' && !block.name.endsWith('_leaves')) {
-                    foundY = dy;
-                    break;
-                }
-            }
+            let foundY = findSurfaceY(bot, pos.x + dx, pos.z + dz);
             if (foundY !== null) {
                 heights.push(foundY);
             }
