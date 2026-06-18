@@ -981,7 +981,18 @@ export async function consume(bot, itemName="") {
      **/
     let item, name;
     if (itemName) {
+        // 先尝试标准查找（背包 + 热键栏）
         item = bot.inventory.findInventoryItem(itemName);
+        // 如果没找到，遍历所有 slots（包括 offhand/左手）
+        if (!item) {
+            const normalizedName = itemName.replace(/_/g, ' ').toLowerCase();
+            for (const slot of Object.values(bot.inventory.slots)) {
+                if (slot && slot.name && slot.name.includes(normalizedName) && slot.count > 0) {
+                    item = slot;
+                    break;
+                }
+            }
+        }
         name = itemName;
     }
     if (!item) {
