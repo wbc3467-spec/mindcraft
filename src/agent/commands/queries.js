@@ -71,11 +71,21 @@ export const queryList = [
             res += `\- Current Action: ${action}`;
 
 
-            let players = world.getNearbyPlayerNames(bot);
             let bots = convoManager.getInGameAgents().filter(b => b !== agent.name);
-            players = players.filter(p => !bots.includes(p));
+            let nearbyEntities = world.getNearbyPlayers(bot, 64);
+            let humanPlayers = nearbyEntities.filter(e => !bots.includes(e.username));
 
-            res += '\n- Nearby Human Players: ' + (players.length > 0 ? players.join(', ') : 'None.');
+            let playerInfo = humanPlayers.map(e => {
+                let dx = e.position.x - bot.entity.position.x;
+                let dy = e.position.y - bot.entity.position.y;
+                let dz = e.position.z - bot.entity.position.z;
+                let dxStr = dx >= 0 ? '+' + dx.toFixed(1) : dx.toFixed(1);
+                let dyStr = dy >= 0 ? '+' + dy.toFixed(1) : dy.toFixed(1);
+                let dzStr = dz >= 0 ? '+' + dz.toFixed(1) : dz.toFixed(1);
+                return e.username + ' (x' + dxStr + ', y' + dyStr + ', z' + dzStr + ')';
+            });
+
+            res += '\n- Nearby Human Players: ' + (playerInfo.length > 0 ? playerInfo.join(', ') : 'None.');
             res += '\n- Nearby Bot Players: ' + (bots.length > 0 ? bots.join(', ') : 'None.');
 
             res += '\n' + agent.bot.modes.getMiniDocs() + '\n';
