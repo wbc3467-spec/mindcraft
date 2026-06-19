@@ -256,6 +256,68 @@ export class AstrBot {
         return this._callChatApi(payload, stop_seq);
     }
 
+    // Send text + image together (for self-prompt with auto vision)
+    async sendRequestWithImage(turns, systemMessage, imageBuffer, stop_seq = '***') {
+        const latestTurn = turns.length > 0 ? turns[turns.length - 1] : null;
+        const latestContent = latestTurn ? (latestTurn.content || '') : '';
+        const latestRole = latestTurn ? latestTurn.role : 'user';
+
+        let cleanContent = latestContent;
+        while (cleanContent.includes(stop_seq)) {
+            cleanContent = cleanContent.replace(stop_seq, '');
+        }
+
+        const liveStatus = extractLiveStatus(systemMessage);
+
+        let messageText = '';
+        const isPlayerMessage = (latestRole === 'user');
+        
+        if (isPlayerMessage) {
+            messageText = cleanContent;
+        } else {
+            if (liveStatus) {
+                messageText += '[Current Status]\n' + liveStatus + '\n\n';
+            }
+            let roleLabel = 'User';
+            if (latestRole === 'assistant') roleLabel = 'Assistant';
+            else if (latestRole === 'system') roleLabel = 'System';
+            messageText += '[' + roleLabel + '] ' + cleanContent;
+        }
+
+        const sessionId = 'mindcraft_' + this.botName;
+
+        try {
+            // Upload image
+            console.log('[AstrBot] Uploading screenshot for auto vision...');
+            const attachmentId = await this.uploadFile(imageBuffer);
+            console.log('[AstrBot] Image uploaded, attachment_id:', attachmentId);
+
+            // Build message segments: text + image
+            const messageSegments = [
+                { type: 'plain', text: messageText },
+                { type: 'image', attachment_id: attachmentId }
+            ];
+
+            const payload = {
+                username: this.username,
+                session_id: sessionId,
+                message: messageSegments,
+                config_name: this.configName,
+                enable_streaming: false,
+                _skip_user_history: isPlayerMessage ? false : true,
+                _is_mindcraft_system: isPlayerMessage ? undefined : true,
+            };
+
+            console.log('[AstrBot] Sending text+image request for [' + this.botName + ']...');
+            return await this._callChatApi(payload, stop_seq);
+
+        } catch (err) {
+            console.error('[AstrBot] Text+image upload failed, fallback to text:', err.message || err);
+            // Fallback: send text only
+            return await this.sendRequest(turns, systemMessage, stop_seq);
+        }
+    }
+
     // Send vision request (uploads image, sends as message array)
     async sendVisionRequest(messages, systemMessage, imageBuffer) {
         const sessionId = 'mindcraft_' + this.botName;

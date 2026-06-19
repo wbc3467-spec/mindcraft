@@ -271,6 +271,52 @@ export class Prompter {
         return '';
     }
 
+    async promptConvoWithImage(messages, imageBuffer) {
+        this.most_recent_msg_time = Date.now();
+        let current_msg_time = this.most_recent_msg_time;
+
+        for (let i = 0; i < 3; i++) {
+            await this.checkCooldown();
+            if (current_msg_time !== this.most_recent_msg_time) {
+                return '';
+            }
+
+            let prompt = this.profile.conversing;
+            prompt = await this.replaceStrings(prompt, messages, this.convo_examples);
+            let generation;
+            try {
+                if (this.vision_model && this.vision_model.sendRequestWithImage) {
+                    generation = await this.vision_model.sendRequestWithImage(messages, prompt, imageBuffer);
+                } else {
+                    generation = await this.chat_model.sendRequest(messages, prompt);
+                }
+                if (typeof generation !== 'string') {
+                    console.error('Error: Generated response is not a string', generation);
+                    throw new Error('Generated response is not a string');
+                }
+                console.log('Generated response (with image):', generation);
+                await this._saveLog(prompt, messages, generation, 'conversation');
+            } catch (error) {
+                console.error('Error during message generation or file writing:', error);
+                continue;
+            }
+            if (generation?.includes('(FROM OTHER BOT)')) {
+                console.warn('LLM hallucinated message as another bot. Trying again...');
+                continue;
+            }
+            if (current_msg_time !== this.most_recent_msg_time) {
+                console.warn(this.agent.name + ' received new message while generating, discarding old response.');
+                return '';
+            }
+            if (generation?.includes(' response')) {
+                const [_, afterThink] = generation.split(' response');
+                generation = afterThink;
+            }
+            return generation;
+        }
+        return '';
+    }
+
     async promptCoding(messages) {
         if (this.awaiting_coding) {
             console.warn('Already awaiting coding response, returning no response.');

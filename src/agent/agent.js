@@ -8,6 +8,7 @@ import * as world from './library/world.js';
 import { containsCommand, commandExists, executeCommand, truncCommandMessage, isAction, blacklistCommands, extractAllCommands } from './commands/index.js';
 import { ActionManager } from './action_manager.js';
 import { NPCContoller } from './npc/controller.js';
+import fs from 'fs';
 import { MemoryBank } from './memory_bank.js';
 import { SelfPrompter } from './self_prompter.js';
 import convoManager from './conversation.js';
@@ -334,20 +335,18 @@ export class Agent {
             } catch (e) {
                 // silently skip
             }
-            // Auto vision every 5 self-prompts
-            if (this.vision_interpreter && this.vision_interpreter.captureCurrentView) {
-                this._visionCounter = (this._visionCounter || 0) + 1;
-                if (this._visionCounter >= 5) {
-                    this._visionCounter = 0;
-                    try {
-                        const visionResult = await this.vision_interpreter.captureCurrentView();
-                        if (visionResult) {
-                            await this.history.add('system', visionResult);
-                            console.log('[Auto Vision] Captured and analyzed current view');
-                        }
-                    } catch (e) {
-                        console.warn('[Auto Vision] Failed:', e.message);
+            // Auto capture screenshot for every self-prompt
+            this._lastImageBuffer = null;
+            if (this.vision_interpreter && this.vision_interpreter.camera) {
+                try {
+                    const filename = await this.vision_interpreter.camera.capture();
+                    if (filename) {
+                        const imagePath = this.vision_interpreter.fp + filename + '.jpg';
+                        this._lastImageBuffer = fs.readFileSync(imagePath);
+                        console.log('[Auto Vision] Screenshot captured for self-prompt:', filename);
                     }
+                } catch (e) {
+                    console.warn('[Auto Vision] Capture failed:', e.message);
                 }
             }
         }
@@ -373,7 +372,13 @@ export class Agent {
         for (let i=0; i<max_responses; i++) {
             if (checkInterrupt()) break;
             let history = this.history.getHistory();
-            let res = await this.prompter.promptConvo(history);
+            let res;
+            if (self_prompt && this._lastImageBuffer) {
+                res = await this.prompter.promptConvoWithImage(history, this._lastImageBuffer);
+                this._lastImageBuffer = null;
+            } else {
+                res = await this.prompter.promptConvo(history);
+            }
 
             console.log(`${this.name} full response to ${source}: ""${res}""`);
 
