@@ -62,6 +62,8 @@ export const queryList = [
             const offhand = bot.inventory.slots[45]; // slot 45 = offhand
             res += `\n- Main hand: ${heldItem ? heldItem.displayName || heldItem.name : 'empty'}`;
             res += `\n- Off hand: ${offhand ? offhand.displayName || offhand.name : 'empty'}`;
+            // Sneak status
+            res += `\n- Sneak: ${bot.sneakToggled ? 'ON' : 'OFF'}`;
             // let block = bot.blockAt(pos);
             // res += `\n- Artficial light: ${block.skyLight}`;
             // res += `\n- Sky light: ${block.light}`;

@@ -615,6 +615,19 @@ export const actionsList = [
         })
     },
     {
+        name: '!sneak',
+        description: 'Toggle sneaking on/off.',
+        params: { },
+        perform: runAsAction(async (agent) => {
+            let bot = agent.bot;
+            let isSneaking = bot.sneakToggled || false;
+            let newState = !isSneaking;
+            bot.setControlState('sneak', newState);
+            bot.sneakToggled = newState;
+            bot.log(newState ? 'Sneaking ON.' : 'Sneaking OFF.');
+        })
+    },
+    {
         name: '!dismount',
         description: 'Dismount from boat, horse, minecart, or any vehicle.',
         params: { },
