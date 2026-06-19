@@ -374,10 +374,10 @@ export class Agent {
             let history = this.history.getHistory();
             let res;
             if (self_prompt && this._lastImageBuffer) {
-                res = await this.prompter.promptConvoWithImage(history, this._lastImageBuffer);
+                res = await this.prompter.promptConvoWithImage(history, this._lastImageBuffer, false);
                 this._lastImageBuffer = null;
             } else {
-                res = await this.prompter.promptConvo(history);
+                res = await this.prompter.promptConvo(history, !self_prompt);
             }
 
             console.log(`${this.name} full response to ${source}: ""${res}""`);

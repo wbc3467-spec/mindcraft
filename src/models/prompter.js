@@ -221,7 +221,7 @@ export class Prompter {
         this.last_prompt_time = Date.now();
     }
 
-    async promptConvo(messages) {
+    async promptConvo(messages, isPlayerMessage = false) {
         this.most_recent_msg_time = Date.now();
         let current_msg_time = this.most_recent_msg_time;
 
@@ -236,7 +236,7 @@ export class Prompter {
             let generation;
 
             try {
-                generation = await this.chat_model.sendRequest(messages, prompt);
+                generation = await this.chat_model.sendRequest(messages, prompt, undefined, isPlayerMessage);
                 if (typeof generation !== 'string') {
                     console.error('Error: Generated response is not a string', generation);
                     throw new Error('Generated response is not a string');
@@ -271,7 +271,7 @@ export class Prompter {
         return '';
     }
 
-    async promptConvoWithImage(messages, imageBuffer) {
+    async promptConvoWithImage(messages, imageBuffer, isPlayerMessage = false) {
         this.most_recent_msg_time = Date.now();
         let current_msg_time = this.most_recent_msg_time;
 
@@ -286,9 +286,9 @@ export class Prompter {
             let generation;
             try {
                 if (this.vision_model && this.vision_model.sendRequestWithImage) {
-                    generation = await this.vision_model.sendRequestWithImage(messages, prompt, imageBuffer);
+                    generation = await this.vision_model.sendRequestWithImage(messages, prompt, imageBuffer, undefined, isPlayerMessage);
                 } else {
-                    generation = await this.chat_model.sendRequest(messages, prompt);
+                    generation = await this.chat_model.sendRequest(messages, prompt, undefined, isPlayerMessage);
                 }
                 if (typeof generation !== 'string') {
                     console.error('Error: Generated response is not a string', generation);

@@ -213,33 +213,20 @@ export class AstrBot {
     }
 
     // Send chat request (text only, incremental)
-    async sendRequest(turns, systemMessage, stop_seq = '***') {
+    async sendRequest(turns, systemMessage, stop_seq = '***', isPlayerMessage = false) {
         const latestTurn = turns.length > 0 ? turns[turns.length - 1] : null;
         const latestContent = latestTurn ? (latestTurn.content || '') : '';
-        const latestRole = latestTurn ? latestTurn.role : 'user';
-
         let cleanContent = latestContent;
         while (cleanContent.includes(stop_seq)) {
             cleanContent = cleanContent.replace(stop_seq, '');
         }
 
-        const liveStatus = extractLiveStatus(systemMessage);
-
-        let messageText = '';
-        const isPlayerMessage = (latestRole === 'user');
-        
+        let messageText;
         if (isPlayerMessage) {
-            // Player message: send only message itself, no live status, save to history
             messageText = cleanContent;
         } else {
-            // AI response: include live status, don't save to history
-            if (liveStatus) {
-                messageText += '[Current Status]\n' + liveStatus + '\n\n';
-            }
-            let roleLabel = 'User';
-            if (latestRole === 'assistant') roleLabel = 'Assistant';
-            else if (latestRole === 'system') roleLabel = 'System';
-            messageText += '[' + roleLabel + '] ' + cleanContent;
+            const liveStatus = extractLiveStatus(systemMessage);
+            messageText = liveStatus ? `[Current Status]\n${liveStatus}\n\n${cleanContent}` : cleanContent;
         }
 
         const sessionId = 'mindcraft_' + this.botName;
@@ -257,31 +244,20 @@ export class AstrBot {
     }
 
     // Send text + image together (for self-prompt with auto vision)
-    async sendRequestWithImage(turns, systemMessage, imageBuffer, stop_seq = '***') {
+    async sendRequestWithImage(turns, systemMessage, imageBuffer, stop_seq = '***', isPlayerMessage = false) {
         const latestTurn = turns.length > 0 ? turns[turns.length - 1] : null;
         const latestContent = latestTurn ? (latestTurn.content || '') : '';
-        const latestRole = latestTurn ? latestTurn.role : 'user';
-
         let cleanContent = latestContent;
         while (cleanContent.includes(stop_seq)) {
             cleanContent = cleanContent.replace(stop_seq, '');
         }
 
-        const liveStatus = extractLiveStatus(systemMessage);
-
-        let messageText = '';
-        const isPlayerMessage = (latestRole === 'user');
-        
+        let messageText;
         if (isPlayerMessage) {
             messageText = cleanContent;
         } else {
-            if (liveStatus) {
-                messageText += '[Current Status]\n' + liveStatus + '\n\n';
-            }
-            let roleLabel = 'User';
-            if (latestRole === 'assistant') roleLabel = 'Assistant';
-            else if (latestRole === 'system') roleLabel = 'System';
-            messageText += '[' + roleLabel + '] ' + cleanContent;
+            const liveStatus = extractLiveStatus(systemMessage);
+            messageText = liveStatus ? `[Current Status]\n${liveStatus}\n\n${cleanContent}` : cleanContent;
         }
 
         const sessionId = 'mindcraft_' + this.botName;
@@ -314,7 +290,7 @@ export class AstrBot {
         } catch (err) {
             console.error('[AstrBot] Text+image upload failed, fallback to text:', err.message || err);
             // Fallback: send text only
-            return await this.sendRequest(turns, systemMessage, stop_seq);
+            return await this.sendRequest(turns, systemMessage, stop_seq, isPlayerMessage);
         }
     }
 
