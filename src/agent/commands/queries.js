@@ -224,7 +224,7 @@ export const queryList = [
         description: "Get the blocks near the bot.",
         perform: function (agent) {
             let bot = agent.bot;
-            let res = 'NEARBY_BLOCKS';
+            let res = 'NEARBY_BLOCKS (range: 8 blocks)';
             let blocks = world.getNearestBlocks(bot);
             let block_details = new Set();
             
@@ -268,7 +268,7 @@ export const queryList = [
         description: "Get the nearby players and entities.",
         perform: function (agent) {
             let bot = agent.bot;
-            let res = 'NEARBY_ENTITIES';
+            let res = 'NEARBY_ENTITIES (range: 64 blocks)';
             let players = world.getNearbyPlayerNames(bot);
             let bots = convoManager.getInGameAgents().filter(b => b !== agent.name);
             players = players.filter(p => !bots.includes(p));
@@ -340,7 +340,7 @@ export const queryList = [
                 }
             }
             
-            if (res == 'NEARBY_ENTITIES') {
+            if (res == 'NEARBY_ENTITIES (range: 64 blocks)') {
                 res += ': none';
             }
             return pad(res);
