@@ -33,6 +33,81 @@ async function equipHighestAttack(bot) {
         await bot.equip(weapon, 'hand');
 }
 
+
+// 坐标版容器函数 - 直接指定坐标
+export async function viewContainerAt(bot, x, y, z) {
+    const pos = new (require('vec3').Vec3)(x, y, z);
+    let container = bot.blockAt(pos);
+    if (!container) {
+        log(bot, `No block at (${x}, ${y}, ${z}).`);
+        return false;
+    }
+    await goToPosition(bot, x, y, z, 2);
+    const containerObj = await bot.openContainer(container);
+    let items = containerObj.containerItems();
+    log(bot, `=== Container at (${x}, ${y}, ${z}) ===`);
+    if (items.length === 0) {
+        log(bot, `The container is empty.`);
+    } else {
+        for (let item of items) {
+            log(bot, `${item.count} ${item.name}`);
+        }
+    }
+    await containerObj.close();
+    return true;
+}
+
+export async function putInContainerAt(bot, itemName, num, x, y, z) {
+    const pos = new (require('vec3').Vec3)(x, y, z);
+    let container = bot.blockAt(pos);
+    if (!container) {
+        log(bot, `No block at (${x}, ${y}, ${z}).`);
+        return false;
+    }
+    let item = bot.inventory.findInventoryItem(itemName);
+    if (!item) {
+        log(bot, `You do not have any ${itemName} to put.`);
+        return false;
+    }
+    let to_put = num === -1 ? item.count : Math.min(num, item.count);
+    await goToPosition(bot, x, y, z, 2);
+    const containerObj = await bot.openContainer(container);
+    await containerObj.deposit(item.type, null, to_put);
+    await containerObj.close();
+    log(bot, `Successfully put ${to_put} ${itemName} in container at (${x}, ${y}, ${z}).`);
+    return true;
+}
+
+export async function takeFromContainerAt(bot, itemName, num, x, y, z) {
+    const pos = new (require('vec3').Vec3)(x, y, z);
+    let container = bot.blockAt(pos);
+    if (!container) {
+        log(bot, `No block at (${x}, ${y}, ${z}).`);
+        return false;
+    }
+    await goToPosition(bot, x, y, z, 2);
+    const containerObj = await bot.openContainer(container);
+    let matchingItems = containerObj.containerItems().filter(item => item.name === itemName);
+    if (matchingItems.length === 0) {
+        log(bot, `Could not find any ${itemName} in the container.`);
+        await containerObj.close();
+        return false;
+    }
+    let totalAvailable = matchingItems.reduce((sum, item) => sum + item.count, 0);
+    let remaining = num === -1 ? totalAvailable : Math.min(num, totalAvailable);
+    let totalTaken = 0;
+    for (let item of matchingItems) {
+        if (remaining <= 0) break;
+        let to_take = Math.min(remaining, item.count);
+        await containerObj.withdraw(item.type, null, to_take);
+        remaining -= to_take;
+        totalTaken += to_take;
+    }
+    await containerObj.close();
+    log(bot, `Successfully took ${totalTaken} ${itemName} from container at (${x}, ${y}, ${z}).`);
+    return true;
+}
+
 export async function craftRecipe(bot, itemName, num=1) {
     /**
      * Attempt to craft the given item name from a recipe. May craft many items.
@@ -969,6 +1044,95 @@ export async function viewChest(bot) {
     await chestContainer.close();
     return true;
 }
+
+
+
+// 通用容器函数 - 查看
+// 通用容器搜索：找最近的容器（方块或实体）
+async function findNearestContainer(bot, containerType, range=32) {
+    // 先找方块
+    let container = world.getNearestBlock(bot, containerType, range);
+    if (container) return { type: 'block', target: container, pos: container.position };
+    
+    // 再找实体（如 minecart_chest, chest_boat, minecart_hopper）
+    if (world.isEntityType(containerType)) {
+        const entity = world.getNearestEntityWhere(bot, e => e.name === containerType, range);
+        if (entity) return { type: 'entity', target: entity, pos: entity.position };
+    }
+    
+    return null;
+}
+
+export async function viewContainer(bot, containerType, range=32) {
+    const found = await findNearestContainer(bot, containerType, range);
+    if (!found) {
+        log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
+        return false;
+    }
+    await goToPosition(bot, found.pos.x, found.pos.y, found.pos.z, 2);
+    const containerObj = await bot.openContainer(found.target);
+    let items = containerObj.containerItems();
+    log(bot, `=== ${found.type}: ${containerType} at (${found.pos.x.toFixed(1)}, ${found.pos.y.toFixed(1)}, ${found.pos.z.toFixed(1)}) ===`);
+    if (items.length === 0) {
+        log(bot, `The container is empty.`);
+    } else {
+        for (let item of items) {
+            log(bot, `${item.count} ${item.name}`);
+        }
+    }
+    await containerObj.close();
+    return true;
+}
+
+export async function putInContainer(bot, itemName, num, containerType, range=32) {
+    const found = await findNearestContainer(bot, containerType, range);
+    if (!found) {
+        log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
+        return false;
+    }
+    let item = bot.inventory.findInventoryItem(itemName);
+    if (!item) {
+        log(bot, `You do not have any ${itemName} to put.`);
+        return false;
+    }
+    let to_put = num === -1 ? item.count : Math.min(num, item.count);
+    await goToPosition(bot, found.pos.x, found.pos.y, found.pos.z, 2);
+    const containerObj = await bot.openContainer(found.target);
+    await containerObj.deposit(item.type, null, to_put);
+    await containerObj.close();
+    log(bot, `Successfully put ${to_put} ${itemName} in ${containerType}.`);
+    return true;
+}
+
+export async function takeFromContainer(bot, itemName, num, containerType, range=32) {
+    const found = await findNearestContainer(bot, containerType, range);
+    if (!found) {
+        log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
+        return false;
+    }
+    await goToPosition(bot, found.pos.x, found.pos.y, found.pos.z, 2);
+    const containerObj = await bot.openContainer(found.target);
+    let matchingItems = containerObj.containerItems().filter(item => item.name === itemName);
+    if (matchingItems.length === 0) {
+        log(bot, `Could not find any ${itemName} in the ${containerType}.`);
+        await containerObj.close();
+        return false;
+    }
+    let totalAvailable = matchingItems.reduce((sum, item) => sum + item.count, 0);
+    let remaining = num === -1 ? totalAvailable : Math.min(num, totalAvailable);
+    let totalTaken = 0;
+    for (let item of matchingItems) {
+        if (remaining <= 0) break;
+        let to_take = Math.min(remaining, item.count);
+        await containerObj.withdraw(item.type, null, to_take);
+        remaining -= to_take;
+        totalTaken += to_take;
+    }
+    await containerObj.close();
+    log(bot, `Successfully took ${totalTaken} ${itemName} from ${containerType}.`);
+    return true;
+}
+
 
 export async function consume(bot, itemName="") {
     /**

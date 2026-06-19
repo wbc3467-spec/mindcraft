@@ -262,6 +262,82 @@ export const actionsList = [
         })
     },
     {
+        name: '!viewContainerAt',
+        description: 'View the items/counts of the container at given coordinates.',
+        params: {
+            'x': { type: 'float', description: 'X coordinate of the container.' },
+            'y': { type: 'float', description: 'Y coordinate of the container.' },
+            'z': { type: 'float', description: 'Z coordinate of the container.' }
+        },
+        perform: runAsAction(async (agent, x, y, z) => {
+            await skills.viewContainerAt(agent.bot, x, y, z);
+        })
+    },
+    {
+        name: '!putInContainerAt',
+        description: 'Put the given item in the container at given coordinates.',
+        params: {
+            'item_name': { type: 'ItemName', description: 'The name of the item to put.' },
+            'num': { type: 'int', description: 'The number of items to put.', domain: [1, Number.MAX_SAFE_INTEGER] },
+            'x': { type: 'float', description: 'X coordinate of the container.' },
+            'y': { type: 'float', description: 'Y coordinate of the container.' },
+            'z': { type: 'float', description: 'Z coordinate of the container.' }
+        },
+        perform: runAsAction(async (agent, item_name, num, x, y, z) => {
+            await skills.putInContainerAt(agent.bot, item_name, num, x, y, z);
+        })
+    },
+    {
+        name: '!takeFromContainerAt',
+        description: 'Take the given items from the container at given coordinates.',
+        params: {
+            'item_name': { type: 'ItemName', description: 'The name of the item to take.' },
+            'num': { type: 'int', description: 'The number of items to take.', domain: [1, Number.MAX_SAFE_INTEGER] },
+            'x': { type: 'float', description: 'X coordinate of the container.' },
+            'y': { type: 'float', description: 'Y coordinate of the container.' },
+            'z': { type: 'float', description: 'Z coordinate of the container.' }
+        },
+        perform: runAsAction(async (agent, item_name, num, x, y, z) => {
+            await skills.takeFromContainerAt(agent.bot, item_name, num, x, y, z);
+        })
+    },
+    {
+        name: '!viewContainer',
+        description: 'View the items/counts of the nearest container (block or entity) of given type.',
+        params: {
+            'type': { type: 'string', description: 'Container type: chest, barrel, trapped_chest, hopper, dropper, dispenser, brewing_stand, minecart_chest, minecart_hopper, chest_boat.' },
+            'range': { type: 'int', description: 'Search range in blocks (default 32).', domain: [1, 128], optional: true }
+        },
+        perform: runAsAction(async (agent, containerType, range) => {
+            await skills.viewContainer(agent.bot, containerType, range || 32);
+        })
+    },
+    {
+        name: '!putInContainer',
+        description: 'Put the given item in the nearest container (block or entity) of given type.',
+        params: {
+            'item_name': { type: 'ItemName', description: 'The name of the item to put.' },
+            'num': { type: 'int', description: 'The number of items to put.', domain: [1, Number.MAX_SAFE_INTEGER] },
+            'type': { type: 'string', description: 'Container type: chest, barrel, hopper, minecart_chest, etc.' }
+        },
+        perform: runAsAction(async (agent, item_name, num, containerType) => {
+            await skills.putInContainer(agent.bot, item_name, num, containerType);
+        })
+    },
+    {
+        name: '!takeFromContainer',
+        description: 'Take the given items from the nearest container (block or entity) of given type.',
+        params: {
+            'item_name': { type: 'ItemName', description: 'The name of the item to take.' },
+            'num': { type: 'int', description: 'The number of items to take.', domain: [1, Number.MAX_SAFE_INTEGER] },
+            'type': { type: 'string', description: 'Container type: chest, barrel, hopper, minecart_chest, etc.' }
+        },
+        perform: runAsAction(async (agent, item_name, num, containerType) => {
+            await skills.takeFromContainer(agent.bot, item_name, num, containerType);
+        })
+    },
+    {
+
         name: '!discard',
         description: 'Discard the given item from the inventory.',
         params: {
@@ -494,6 +570,58 @@ export const actionsList = [
             await agent.actions.runAction('action:lookAtPosition', actionFn);
             return result;
         }
+    },
+    {
+        name: '!digBlock',
+        description: 'Destroy the block at the given coordinates.',
+        params: {
+            'x': { type: 'int', description: 'X coordinate of the block to dig.' },
+            'y': { type: 'int', description: 'Y coordinate of the block to dig.' },
+            'z': { type: 'int', description: 'Z coordinate of the block to dig.' }
+        },
+        perform: runAsAction(async (agent, x, y, z) => {
+            await skills.breakBlockAt(agent.bot, x, y, z);
+        })
+    },
+    {
+        name: '!placeBlock',
+        description: 'Place a block at the given coordinates.',
+        params: {
+            'x': { type: 'int', description: 'X coordinate to place the block.' },
+            'y': { type: 'int', description: 'Y coordinate to place the block.' },
+            'z': { type: 'int', description: 'Z coordinate to place the block.' },
+            'type': { type: 'BlockOrItemName', description: 'The block type to place.' }
+        },
+        perform: runAsAction(async (agent, x, y, z, blockType) => {
+            await skills.placeBlock(agent.bot, blockType, x, y, z);
+        })
+    },
+    {
+        name: '!queryBlock',
+        description: 'Query the block type at the given coordinates.',
+        params: {
+            'x': { type: 'int', description: 'X coordinate to query.' },
+            'y': { type: 'int', description: 'Y coordinate to query.' },
+            'z': { type: 'int', description: 'Z coordinate to query.' }
+        },
+        perform: runAsAction(async (agent, x, y, z) => {
+            const pos = new (require('vec3').Vec3)(x, y, z);
+            const block = agent.bot.blockAt(pos);
+            if (!block || block.name === 'air') {
+                agent.bot.log(`Block at (${x}, ${y}, ${z}): air (nothing there).`);
+            } else {
+                agent.bot.log(`Block at (${x}, ${y}, ${z}): ${block.name}`);
+            }
+        })
+    },
+    {
+        name: '!dismount',
+        description: 'Dismount from boat, horse, minecart, or any vehicle.',
+        params: { },
+        perform: runAsAction(async (agent) => {
+            await agent.bot.dismount();
+            agent.bot.log('Dismounted.');
+        })
     },
     {
         name: '!digDown',
