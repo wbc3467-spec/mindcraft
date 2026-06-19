@@ -57,6 +57,11 @@ export const queryList = [
             if (bot.thunderState > 0)
                 weather = "Thunderstorm";
             res += `\n- Weather: ${weather}`;
+            // Hand items
+            const heldItem = bot.heldItem;
+            const offhand = bot.inventory.slots[45]; // slot 45 = offhand
+            res += `\n- Main hand: ${heldItem ? heldItem.displayName || heldItem.name : 'empty'}`;
+            res += `\n- Off hand: ${offhand ? offhand.displayName || offhand.name : 'empty'}`;
             // let block = bot.blockAt(pos);
             // res += `\n- Artficial light: ${block.skyLight}`;
             // res += `\n- Sky light: ${block.light}`;
