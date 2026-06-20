@@ -17,7 +17,7 @@ export class Camera extends EventEmitter {
         super();
         this.bot = bot;
         this.fp = fp;
-        this.viewDistance = 12;
+        this.viewDistance = 8;  // 限制渲染距离，节省token喵
         this.width = 800;
         this.height = 512;
         this.canvas = createCanvas(this.width, this.height);
