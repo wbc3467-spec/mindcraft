@@ -1070,7 +1070,13 @@ export async function viewContainer(bot, containerType, range=32) {
         return false;
     }
     await goToPosition(bot, found.pos.x, found.pos.y, found.pos.z, 2);
-    const containerObj = await bot.openContainer(found.target);
+    let containerObj;
+    try {
+        containerObj = await bot.openContainer(found.target);
+    } catch (e) {
+        log(bot, `Could not open ${containerType}: ${e.message}`);
+        return false;
+    }
     let items = containerObj.containerItems();
     log(bot, `=== ${found.type}: ${containerType} at (${found.pos.x.toFixed(1)}, ${found.pos.y.toFixed(1)}, ${found.pos.z.toFixed(1)}) ===`);
     if (items.length === 0) {
