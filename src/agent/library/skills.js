@@ -1169,10 +1169,20 @@ export async function consume(bot, itemName="") {
         log(bot, `You do not have any ${name} to eat.`);
         return false;
     }
-    await bot.equip(item, 'hand');
-    await bot.consume();
-    log(bot, `Consumed ${item.name}.`);
-    return true;
+    // 🐱 饱食满检查喵！
+    if (bot.food >= 20) {
+        log(bot, `Already full, no need to eat.`);
+        return true;
+    }
+    try {
+        await bot.equip(item, 'hand');
+        await bot.consume();
+        log(bot, `Consumed ${item.name}.`);
+        return true;
+    } catch (err) {
+        log(bot, `Failed to consume: ${err.message}`);
+        return false;
+    }
 }
 
 
