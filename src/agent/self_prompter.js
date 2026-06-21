@@ -151,7 +151,10 @@ export class SelfPrompter {
     update(delta) {
         // automatically restarts loop (ACTIVE state)
         if (this.state === ACTIVE && !this.loop_active && !this.interrupt) {
-            if (this.agent.isIdle())
+            // 🐱 followPlayer/stay 这类后台任务也算空闲喵～
+            const bgActions = ['stay', 'followPlayer', 'mode:'];
+            const isBgAction = bgActions.some(a => this.agent.actions.currentActionLabel?.includes(a));
+            if (this.agent.isIdle() || isBgAction)
                 this.idle_time += delta;
             else
                 this.idle_time = 0;
@@ -164,7 +167,10 @@ export class SelfPrompter {
         }
         // Auto-recover from STOPPED state if there's an active goal
         else if (this.state === STOPPED && this.prompt && !this.loop_active && !this.interrupt) {
-            if (this.agent.isIdle()) {
+            // 🐱 后台任务也算空闲喵～
+            const bgActions = ['stay', 'followPlayer', 'mode:'];
+            const isBgAction = bgActions.some(a => this.agent.actions.currentActionLabel?.includes(a));
+            if (this.agent.isIdle() || isBgAction) {
                 this.idle_time += delta;
                 if (this.idle_time >= this.cooldown * 2) {
                     console.log('Auto-recovering self-prompt from STOPPED...');

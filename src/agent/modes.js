@@ -156,11 +156,11 @@ const modes_list = [
         on: true,
         active: false,
         update: async function (agent) {
-            const enemy = world.getNearestEntityWhere(agent.bot, entity => mc.isHostile(entity), 8);
+            const enemy = world.getNearestEntityWhere(agent.bot, entity => mc.isHostile(entity), 4);
             if (enemy && await world.isClearPath(agent.bot, enemy)) {
                 say(agent, `Fighting ${enemy.name}!`);
                 execute(this, agent, async () => {
-                    await skills.defendSelf(agent.bot, 8);
+                    await skills.attackEntity(agent.bot, enemy);
                 });
             }
         }
@@ -169,7 +169,7 @@ const modes_list = [
         name: 'hunting',
         description: 'Hunt nearby animals when idle.',
         interrupts: ['action:followPlayer'],
-        on: true,
+        on: false,
         active: false,
         update: async function (agent) {
             const huntable = world.getNearestEntityWhere(agent.bot, entity => mc.isHuntable(entity), 8);
@@ -185,7 +185,7 @@ const modes_list = [
         name: 'item_collecting',
         description: 'Collect nearby items when idle.',
         interrupts: ['action:followPlayer'],
-        on: true,
+        on: false,
         active: false,
 
         wait: 2, // number of seconds to wait after noticing an item to pick it up
