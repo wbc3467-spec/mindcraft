@@ -1753,7 +1753,19 @@ export async function goToBed(bot) {
     let loc = beds[0];
     await goToPosition(bot, loc.x, loc.y, loc.z);
     const bed = bot.blockAt(loc);
-    await bot.sleep(bed);
+    // 🐱 白天不能睡觉喵！先检查一下喵～
+    const thunderstorm = bot.isRaining && (bot.thunderState > 0);
+    const canSleep = thunderstorm || (bot.time.timeOfDay >= 12541 && bot.time.timeOfDay <= 23458);
+    if (!canSleep) {
+        log(bot, `Cannot sleep now: it's daytime (time=${bot.time.timeOfDay}).`);
+        return false;
+    }
+    try {
+        await bot.sleep(bed);
+    } catch (err) {
+        log(bot, `Cannot sleep now: ${err.message}`);
+        return false;
+    }
     log(bot, `You are in bed.`);
     bot.modes.pause('unstuck');
     while (bot.isSleeping) {
