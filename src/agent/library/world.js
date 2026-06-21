@@ -445,6 +445,40 @@ export function getBiomeGrid(bot, range=2, step=1) {
     return rows;
 }
 
+/**
+ * Get nearby dropped items within a given distance.
+ * 掉落物扫描，合并同位置同类，按距离排序，最多 maxResults 条喵～
+ * @param {Bot} bot - The bot.
+ * @param {number} maxDistance - Scan radius, default 16.
+ * @param {number} maxResults - Max results to return, default 10.
+ * @returns {Array<{name:string, count:number, dx:number, dy:number, dz:number, dist:number}>}
+ */
+export function getNearbyDroppedItems(bot, maxDistance = 16, maxResults = 10) {
+    return Object.values(bot.entities)
+        .filter(e => e.name === 'item' && bot.entity.position.distanceTo(e.position) <= maxDistance)
+        .map(e => {
+            const stack = e.metadata?.[8];
+            const name = stack?.itemId != null ? mc.getItemName(stack.itemId) : null;
+            if (!name) return null;
+            const dx = Math.round(e.position.x - bot.entity.position.x);
+            const dy = Math.round(e.position.y - bot.entity.position.y);
+            const dz = Math.round(e.position.z - bot.entity.position.z);
+            const dist = Math.round(bot.entity.position.distanceTo(e.position) * 10) / 10;
+            return { name, count: stack.count || 1, dx, dy, dz, dist };
+        })
+        .filter(Boolean)
+        .reduce((acc, item) => {
+            const key = `${item.name}@${item.dx},${item.dy},${item.dz}`;
+            const existing = acc.find(i => i.key === key);
+            if (existing) existing.count += item.count;
+            else acc.push({ ...item, key });
+            return acc;
+        }, [])
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, maxResults)
+        .map(({ key, ...rest }) => rest);
+}
+
 
 export function getConnectedGround(bot, range=2, step=1) {
     /**

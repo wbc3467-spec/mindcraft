@@ -5,7 +5,8 @@ import {
     getInventoryCounts,
     getNearbyEntityTypes,
     getBlockAtPosition,
-    getFirstBlockAboveHead
+    getFirstBlockAboveHead,
+    getNearbyDroppedItems
 } from "./world.js";
 import convoManager from '../conversation.js';
 
@@ -98,6 +99,8 @@ export function getFullState(agent) {
             humanPlayers: players,
             botPlayers: bots,
             entityTypes: getNearbyEntityTypes(bot).filter(t => t !== 'player' && t !== 'item'),
+            // 🐱 16格内的掉落物喵～
+            droppedItems: getNearbyDroppedItems(bot)
         },
         modes: {
             summary: bot.modes.getMiniDocs()
