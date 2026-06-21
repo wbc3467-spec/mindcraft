@@ -120,14 +120,10 @@ const modes_list = [
             }
             const max_stuck_time = cur_dig_block?.name === 'obsidian' ? this.max_stuck_time * 2 : this.max_stuck_time;
             if (this.stuck_time > max_stuck_time) {
-                say(agent, 'I\'m stuck!');
+                skills.log(bot, 'Bot is stuck! Stopping current task, will await new instructions.');
                 this.stuck_time = 0;
-                execute(this, agent, async () => {
-                    const crashTimeout = setTimeout(() => { agent.cleanKill("Got stuck and couldn't get unstuck") }, 10000);
-                    await skills.moveAway(bot, 5);
-                    clearTimeout(crashTimeout);
-                    say(agent, 'I\'m free.');
-                });
+                // 停止当前任务，让LLM自行决策下一步喵
+                agent.cleanKill("Bot got stuck and stopped current task");
             }
             this.last_time = Date.now();
         },
