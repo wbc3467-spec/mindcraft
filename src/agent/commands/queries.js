@@ -177,10 +177,10 @@ export const queryList = [
                 }
                 bz += biomeStep;
             }
-            // 🐱 16格内的掉落物喵～
+            // 🐱 32格内的掉落物喵～
             const dropped = world.getNearbyDroppedItems(bot);
             if (dropped.length > 0) {
-                res += '\n- Dropped Items (max 10):';
+                res += '\n- 32格内掉落物 (最多10):';
                 for (const item of dropped) {
                     res += `
   ${item.name} x${item.count} (dx:${item.dx >= 0 ? '+' : ''}${item.dx}, dy:${item.dy >= 0 ? '+' : ''}${item.dy}, dz:${item.dz >= 0 ? '+' : ''}${item.dz}, ${item.dist}m)`;

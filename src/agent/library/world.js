@@ -453,7 +453,7 @@ export function getBiomeGrid(bot, range=2, step=1) {
  * @param {number} maxResults - Max results to return, default 10.
  * @returns {Array<{name:string, count:number, dx:number, dy:number, dz:number, dist:number}>}
  */
-export function getNearbyDroppedItems(bot, maxDistance = 16, maxResults = 10) {
+export function getNearbyDroppedItems(bot, maxDistance = 32, maxResults = 10) {
     return Object.values(bot.entities)
         .filter(e => e.name === 'item' && bot.entity.position.distanceTo(e.position) <= maxDistance)
         .map(e => {
