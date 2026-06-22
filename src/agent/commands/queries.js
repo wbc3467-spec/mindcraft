@@ -259,6 +259,53 @@ export const queryList = [
         }
     },
     {
+        name: "!scanArea",
+        description: "Scan a 5x2x5 area around the bot, showing block names at Y (feet) and Y-1 (below feet) level.",
+        params: {
+            'width': { type: 'int', description: 'Width (X axis) of the scan area, default 5.', domain: [1, 21], optional: true },
+            'height': { type: 'int', description: 'Height (Y axis) in layers, default 2.', domain: [1, 10], optional: true },
+            'depth': { type: 'int', description: 'Depth (Z axis) of the scan area, default 5.', domain: [1, 21], optional: true }
+        },
+        perform: function (agent, width=5, height=2, depth=5) {
+            let bot = agent.bot;
+            let pos = bot.entity.position;
+            let baseY = Math.floor(pos.y);
+            let hw = Math.floor(width / 2);
+            let hd = Math.floor(depth / 2);
+            let res = `Scan Area (${width}x${height}x${depth}):`;
+            
+            for (let layer = 0; layer < height; layer++) {
+                let y = baseY - 1 + layer;
+                let label = layer === 0 ? 'Y-1 (Below)' : (layer === 1 ? 'Y (Feet)' : `Y+${layer - 1}`);
+                res += `
+[${label} Layer, y=${y}]`;
+                
+                // Column header
+                let colHeader = '';
+                for (let dx = -hw; dx <= hw; dx++) {
+                    let xLabel = dx < 0 ? `x${dx}` : (dx === 0 ? ' x0' : `x+${dx}`);
+                    colHeader += `${xLabel.padStart(6)}`;
+                }
+                res += `
+      ${colHeader}`;
+                
+                // Rows
+                for (let dz = -hd; dz <= hd; dz++) {
+                    let zLabel = dz < 0 ? `z${dz}` : (dz === 0 ? 'z 0' : `z+${dz}`);
+                    let row = zLabel.padEnd(5);
+                    for (let dx = -hw; dx <= hw; dx++) {
+                        let block = bot.blockAt(new (require('vec3').Vec3)(Math.floor(pos.x + dx), y, Math.floor(pos.z + dz)));
+                        let name = block ? block.name.slice(0, 6) : '?';  // 简写，最多6字符
+                        row += name.padStart(6);
+                    }
+                    res += `
+${row}`;
+                }
+            }
+            return pad(res);
+        }
+    },
+    {
         name: "!craftable",
         description: "Get the craftable items with the bot's inventory.",
         perform: function (agent) {

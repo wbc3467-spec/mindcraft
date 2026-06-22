@@ -153,7 +153,7 @@ export class ActionManager {
         const { bot } = this.agent;
         if (bot.interrupt_code && !this.timedout) return '';
         let output = bot.output;
-        const MAX_OUT = 3000; // 放大输出限制，防止容器内容被截断喵
+        const MAX_OUT = 8000; // 再放大喵，容器内容多的时候3000还是不够喵
         if (output.length > MAX_OUT) {
             output = `Action output is very long (${output.length} chars) and has been shortened.\n
           First outputs:\n${output.substring(0, MAX_OUT / 2)}\n...skipping many lines.\nFinal outputs:\n ${output.substring(output.length - MAX_OUT / 2)}`;

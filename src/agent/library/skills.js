@@ -49,9 +49,8 @@ export async function viewContainerAt(bot, x, y, z) {
     if (items.length === 0) {
         log(bot, `The container is empty.`);
     } else {
-        for (let item of items) {
-            log(bot, `${item.count} ${item.name}`);
-        }
+        let grouped = {}; for (let item of items) { grouped[item.name] = (grouped[item.name] || 0) + item.count; } let contents = Object.entries(grouped).map(([name, count]) => `${name} x${count}`).join(', ');
+        log(bot, `Contents: ${contents}`);
     }
     await containerObj.close();
     return true;
@@ -1036,10 +1035,8 @@ export async function viewChest(bot) {
         log(bot, `The chest is empty.`);
     }
     else {
-        log(bot, `The chest contains:`);
-        for (let item of items) {
-            log(bot, `${item.count} ${item.name}`);
-        }
+        let grouped = {}; for (let item of items) { grouped[item.name] = (grouped[item.name] || 0) + item.count; } let contents = Object.entries(grouped).map(([name, count]) => `${name} x${count}`).join(', ');
+        log(bot, `Contents: ${contents}`);
     }
     await chestContainer.close();
     return true;
@@ -1082,9 +1079,8 @@ export async function viewContainer(bot, containerType, range=16) {
     if (items.length === 0) {
         log(bot, `The container is empty.`);
     } else {
-        for (let item of items) {
-            log(bot, `${item.count} ${item.name}`);
-        }
+        let grouped = {}; for (let item of items) { grouped[item.name] = (grouped[item.name] || 0) + item.count; } let contents = Object.entries(grouped).map(([name, count]) => `${name} x${count}`).join(', ');
+        log(bot, `Contents: ${contents}`);
     }
     await containerObj.close();
     return true;
