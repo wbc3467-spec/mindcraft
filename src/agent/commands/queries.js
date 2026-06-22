@@ -104,6 +104,13 @@ export const queryList = [
 
             res += '\n' + agent.bot.modes.getMiniDocs() + '\n';
 
+            // Connected space: ground (9x9, step=1)
+            try {
+                let coreGround = world.getConnectedGround(bot, 4, 1);
+                renderConnected('Ground', coreGround, 4, 1, 'name');
+            } catch (e) {
+                res += '\n[Connected space error: ' + e.message + ']';
+            }
 
             // Helper: render a heightmap block
             function renderZone(label, map, range, step, isHeight) {
