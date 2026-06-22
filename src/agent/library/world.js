@@ -197,7 +197,7 @@ export function getNearestEntityWhere(bot, predicate, maxDistance=16) {
 
 
 export function getNearbyPlayers(bot, maxDistance) {
-    if (maxDistance == null) maxDistance = 16;
+    if (maxDistance == null) maxDistance = 256;
     let players = [];
     for (const entity of Object.values(bot.entities)) {
         const distance = entity.position.distanceTo(bot.entity.position);
@@ -357,7 +357,7 @@ export function getNearbyPlayerNames(bot) {
      * @example
      * let players = world.getNearbyPlayerNames(bot);
      **/
-    let players = getNearbyPlayers(bot, 64);
+    let players = getNearbyPlayers(bot, 256);
     let found = [];
     for (let i = 0; i < players.length; i++) {
         if (!found.includes(players[i].username) && players[i].username != bot.username) {

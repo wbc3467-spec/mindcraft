@@ -86,7 +86,7 @@ export const queryList = [
 
 
             let bots = convoManager.getInGameAgents().filter(b => b !== agent.name);
-            let nearbyEntities = world.getNearbyPlayers(bot, 64);
+            let nearbyEntities = world.getNearbyPlayers(bot, 256);
             let humanPlayers = nearbyEntities.filter(e => !bots.includes(e.username));
 
             let playerInfo = humanPlayers.map(e => {
