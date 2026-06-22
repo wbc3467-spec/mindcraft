@@ -355,7 +355,7 @@ export async function clearNearestFurnace(bot) {
      * @example
      * await skills.clearNearestFurnace(bot);
      **/
-    let furnaceBlock = world.getNearestBlock(bot, 'furnace', 32);
+    let furnaceBlock = world.getNearestBlock(bot, 'furnace', 16);
     if (!furnaceBlock) {
         log(bot, `No furnace nearby to clear.`);
         return false;
@@ -398,7 +398,7 @@ export async function attackNearest(bot, mobType, kill=true) {
     bot.modes.pause('cowardice');
     if (mobType === 'drowned' || mobType === 'cod' || mobType === 'salmon' || mobType === 'tropical_fish' || mobType === 'squid')
         bot.modes.pause('self_preservation'); // so it can go underwater. TODO: have an drowning mode so we don't turn off all self_preservation
-    const mob = world.getNearbyEntities(bot, 24).find(entity => entity.name === mobType);
+    const mob = world.getNearbyEntities(bot, 16).find(entity => entity.name === mobType);
     if (mob) {
         return await attackEntity(bot, mob, kill);
     }
@@ -951,7 +951,7 @@ export async function putInChest(bot, itemName, num=-1) {
      * @example
      * await skills.putInChest(bot, "oak_log");
      **/
-    let chest = world.getNearestBlock(bot, 'chest', 32);
+    let chest = world.getNearestBlock(bot, 'chest', 16);
     if (!chest) {
         log(bot, `Could not find a chest nearby.`);
         return false;
@@ -980,7 +980,7 @@ export async function takeFromChest(bot, itemName, num=-1) {
      * @example
      * await skills.takeFromChest(bot, "oak_log");
      * **/
-    let chest = world.getNearestBlock(bot, 'chest', 32);
+    let chest = world.getNearestBlock(bot, 'chest', 16);
     if (!chest) {
         log(bot, `Could not find a chest nearby.`);
         return false;
@@ -1024,7 +1024,7 @@ export async function viewChest(bot) {
      * @example
      * await skills.viewChest(bot);
      * **/
-    let chest = world.getNearestBlock(bot, 'chest', 32);
+    let chest = world.getNearestBlock(bot, 'chest', 16);
     if (!chest) {
         log(bot, `Could not find a chest nearby.`);
         return false;
@@ -1049,7 +1049,7 @@ export async function viewChest(bot) {
 
 // 通用容器函数 - 查看
 // 通用容器搜索：找最近的容器（方块或实体）
-async function findNearestContainer(bot, containerType, range=32) {
+async function findNearestContainer(bot, containerType, range=16) {
     // 先找方块
     let container = world.getNearestBlock(bot, containerType, range);
     if (container) return { type: 'block', target: container, pos: container.position };
@@ -1063,7 +1063,7 @@ async function findNearestContainer(bot, containerType, range=32) {
     return null;
 }
 
-export async function viewContainer(bot, containerType, range=32) {
+export async function viewContainer(bot, containerType, range=16) {
     const found = await findNearestContainer(bot, containerType, range);
     if (!found) {
         log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
@@ -1090,7 +1090,7 @@ export async function viewContainer(bot, containerType, range=32) {
     return true;
 }
 
-export async function putInContainer(bot, itemName, num, containerType, range=32) {
+export async function putInContainer(bot, itemName, num, containerType, range=16) {
     const found = await findNearestContainer(bot, containerType, range);
     if (!found) {
         log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
@@ -1110,7 +1110,7 @@ export async function putInContainer(bot, itemName, num, containerType, range=32
     return true;
 }
 
-export async function takeFromContainer(bot, itemName, num, containerType, range=32) {
+export async function takeFromContainer(bot, itemName, num, containerType, range=16) {
     const found = await findNearestContainer(bot, containerType, range);
     if (!found) {
         log(bot, `Could not find any ${containerType} nearby (${range} blocks).`);
