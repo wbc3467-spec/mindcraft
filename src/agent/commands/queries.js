@@ -180,8 +180,7 @@ export const queryList = [
             // 🐱 16格内的掉落物喵～
             const dropped = world.getNearbyDroppedItems(bot);
             if (dropped.length > 0) {
-                res += '
-- Dropped Items (max 10):';
+                res += '\n- Dropped Items (max 10):';
                 for (const item of dropped) {
                     res += `
   ${item.name} x${item.count} (dx:${item.dx >= 0 ? '+' : ''}${item.dx}, dy:${item.dy >= 0 ? '+' : ''}${item.dy}, dz:${item.dz >= 0 ? '+' : ''}${item.dz}, ${item.dist}m)`;
