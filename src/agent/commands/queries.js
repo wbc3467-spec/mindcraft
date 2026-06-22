@@ -207,6 +207,9 @@ export const queryList = [
             else if (agent.bot.game.gameMode === 'creative') {
                 res += '\n(You have infinite items in creative mode. You do not need to gather resources!!)';
             }
+            // 🐱 主背包空格子数（hotbar 0-8 + 主背包 9-35，共36格）喵~
+            const emptyCount = bot.inventory.slots.slice(0, 36).filter(s => s === null).length;
+            res += `\n- Empty Slots: ${emptyCount} / 36`;
 
             let helmet = bot.inventory.slots[5];
             let chestplate = bot.inventory.slots[6];
