@@ -39,8 +39,8 @@ export class VisionInterpreter {
         const imageBuffer = fs.readFileSync(imagePath);
         const messages = this.agent.history.getHistory();
         const analysis = await this.agent.prompter.promptConvoWithImage(messages, imageBuffer);
-        return `Looking at player ${player_name}
-Image description: "${analysis}"`;
+        return `You are looking at player ${player_name}.
+Description: "${analysis}"`;
     }
 
     async lookAtPosition(x, y, z) {
@@ -60,8 +60,8 @@ Image description: "${analysis}"`;
         const imageBuffer = fs.readFileSync(imagePath);
         const messages = this.agent.history.getHistory();
         const analysis = await this.agent.prompter.promptConvoWithImage(messages, imageBuffer);
-        return `Looking at coordinate ${x}, ${y}, ${z}
-Image description: "${analysis}"`;
+        return `You are looking at coordinate ${x}, ${y}, ${z}.
+Description: "${analysis}"`;
     }
 
     getCenterBlockInfo() {
