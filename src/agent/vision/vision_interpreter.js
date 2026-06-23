@@ -31,6 +31,10 @@ export class VisionInterpreter {
             filename = await this.camera.capture();
         }
 
+        if (!filename) {
+            return `Looked at player ${player_name} but failed to capture screenshot.`;
+        }
+
         if (bot.interrupt_code) {
             return "Look interrupted.";
         }
@@ -51,6 +55,9 @@ Description: "${analysis}"`;
         await bot.lookAt(new Vec3(x, y + 2, z));
 
         let filename = await this.camera.capture();
+        if (!filename) {
+            return `Looked at coordinate ${x}, ${y}, ${z} but failed to capture screenshot.`;
+        }
         // Check interrupt before vision analysis
         if (bot.interrupt_code) {
             return "Look interrupted.";
