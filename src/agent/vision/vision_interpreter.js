@@ -48,7 +48,10 @@ export class VisionInterpreter {
         result = `Looking at coordinate ${x}, ${y}, ${z}\n`;
 
         let filename = await this.camera.capture();
-
+        // Check interrupt before vision analysis (self-defense may be waiting)
+        if (this.agent.bot.interrupt_code) {
+            return result + 'Image analysis interrupted.';
+        }
         return result + `Image analysis: "${await this.analyzeImage(filename)}"`;
     }
 
@@ -81,6 +84,10 @@ export class VisionInterpreter {
     }
 
     async analyzeImage(filename) {
+        // Check interrupt before starting vision analysis
+        if (this.agent.bot.interrupt_code) {
+            return 'Image analysis interrupted.';
+        }
         try {
             const imageBuffer = fs.readFileSync(`${this.fp}/${filename}.jpg`);
             const messages = this.agent.history.getHistory();
