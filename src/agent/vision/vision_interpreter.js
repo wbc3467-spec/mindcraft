@@ -12,6 +12,29 @@ export class VisionInterpreter {
         }
     }
 
+    // Wait for camera to be ready (async init may not have completed)
+    async _waitCameraReady() {
+        if (!this.camera) return false;
+        if (this.camera.ready) return true;
+        return new Promise((resolve) => {
+            const onReady = () => {
+                this.camera.ready = true;
+                resolve(true);
+            };
+            if (this.camera.ready) {
+                resolve(true);
+                return;
+            }
+            this.camera.once('ready', onReady);
+            // 5 second timeout
+            setTimeout(() => {
+                this.camera.removeListener('ready', onReady);
+                console.warn('[Vision] Camera ready timeout');
+                resolve(false);
+            }, 5000);
+        });
+    }
+
     async lookAtPlayer(player_name, direction) {
         if (!this.allow_vision || !this.agent.prompter.chat_model) {
             return "Vision is disabled.";
@@ -25,10 +48,10 @@ export class VisionInterpreter {
         let filename;
         if (direction === 'with') {
             await bot.look(player.yaw, player.pitch);
-            filename = await this.camera.capture();
+            filename = await this._waitCameraReady().then(r => r ? this.camera.capture() : null);
         } else {
             await bot.lookAt(new Vec3(player.position.x, player.position.y + player.height, player.position.z));
-            filename = await this.camera.capture();
+            filename = await this._waitCameraReady().then(r => r ? this.camera.capture() : null);
         }
 
         if (!filename) {
@@ -54,7 +77,7 @@ Description: "${analysis}"`;
         const bot = this.agent.bot;
         await bot.lookAt(new Vec3(x, y + 2, z));
 
-        let filename = await this.camera.capture();
+        let filename = await this._waitCameraReady().then(r => r ? this.camera.capture() : null);
         if (!filename) {
             return `Looked at coordinate ${x}, ${y}, ${z} but failed to capture screenshot.`;
         }
@@ -89,7 +112,7 @@ Description: "${analysis}"`;
             return null;
         }
         try {
-            const filename = await this.camera.capture();
+            const filename = await this._waitCameraReady().then(r => r ? this.camera.capture() : null);
             if (!filename) return null;
             const imagePath = `${this.fp}/${filename}.jpg`;
             const imageBuffer = fs.readFileSync(imagePath);
