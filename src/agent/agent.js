@@ -389,6 +389,14 @@ export class Agent {
 
             let commands = extractAllCommands(res);
 
+            // 重排序：将视觉命令移到末尾，避免在命令队列中间触发API请求导致冲突喵
+            const visionCmds = ['!lookAtPosition', '!lookAtPlayer'];
+            const reordered = [[], []]; // [nonVision, vision]
+            for (const cmd of commands) {
+                reordered[visionCmds.includes(cmd.name) ? 1 : 0].push(cmd);
+            }
+            commands = [...reordered[0], ...reordered[1]];
+
             if (commands.length > 0) { // contains one or more commands
                 let textPart = res;
                 for (let cmd of commands) {
