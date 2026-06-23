@@ -13,10 +13,9 @@ export class VisionInterpreter {
     }
 
     async lookAtPlayer(player_name, direction) {
-        if (!this.allow_vision || !this.agent.prompter.vision_model.sendVisionRequest) {
-            return "Vision is disabled. Use other methods to describe the environment.";
+        if (!this.allow_vision || !this.agent.prompter.chat_model) {
+            return "Vision is disabled.";
         }
-        let result = "";
         const bot = this.agent.bot;
         const player = bot.players[player_name]?.entity;
         if (!player) {
@@ -26,33 +25,43 @@ export class VisionInterpreter {
         let filename;
         if (direction === 'with') {
             await bot.look(player.yaw, player.pitch);
-            result = `Looking in the same direction as ${player_name}\n`;
             filename = await this.camera.capture();
         } else {
             await bot.lookAt(new Vec3(player.position.x, player.position.y + player.height, player.position.z));
-            result = `Looking at player ${player_name}\n`;
             filename = await this.camera.capture();
-
         }
 
-        return result + `Image analysis: "${await this.analyzeImage(filename)}"`;
+        if (bot.interrupt_code) {
+            return "Look interrupted.";
+        }
+
+        const imagePath = `${this.fp}/${filename}.jpg`;
+        const imageBuffer = fs.readFileSync(imagePath);
+        const messages = this.agent.history.getHistory();
+        const analysis = await this.agent.prompter.promptConvoWithImage(messages, imageBuffer);
+        return `Looking at player ${player_name}
+Image description: "${analysis}"`;
     }
 
     async lookAtPosition(x, y, z) {
-        if (!this.allow_vision || !this.agent.prompter.vision_model.sendVisionRequest) {
-            return "Vision is disabled. Use other methods to describe the environment.";
+        if (!this.allow_vision || !this.agent.prompter.chat_model) {
+            return "Vision is disabled.";
         }
-        let result = "";
         const bot = this.agent.bot;
         await bot.lookAt(new Vec3(x, y + 2, z));
-        result = `Looking at coordinate ${x}, ${y}, ${z}\n`;
 
         let filename = await this.camera.capture();
-        // Check interrupt before vision analysis (self-defense may be waiting)
-        if (this.agent.bot.interrupt_code) {
-            return result + 'Image analysis interrupted.';
+        // Check interrupt before vision analysis
+        if (bot.interrupt_code) {
+            return "Look interrupted.";
         }
-        return result + `Image analysis: "${await this.analyzeImage(filename)}"`;
+
+        const imagePath = `${this.fp}/${filename}.jpg`;
+        const imageBuffer = fs.readFileSync(imagePath);
+        const messages = this.agent.history.getHistory();
+        const analysis = await this.agent.prompter.promptConvoWithImage(messages, imageBuffer);
+        return `Looking at coordinate ${x}, ${y}, ${z}
+Image description: "${analysis}"`;
     }
 
     getCenterBlockInfo() {
@@ -69,13 +78,16 @@ export class VisionInterpreter {
 
     // Auto-capture current view (for self-prompt vision)
     async captureCurrentView() {
-        if (!this.allow_vision || !this.camera || !this.agent.prompter.vision_model.sendVisionRequest) {
+        if (!this.allow_vision || !this.camera || !this.agent.prompter.chat_model) {
             return null;
         }
         try {
             const filename = await this.camera.capture();
             if (!filename) return null;
-            const analysis = await this.analyzeImage(filename);
+            const imagePath = `${this.fp}/${filename}.jpg`;
+            const imageBuffer = fs.readFileSync(imagePath);
+            const messages = this.agent.history.getHistory();
+            const analysis = await this.agent.prompter.promptConvoWithImage(messages, imageBuffer);
             return `[Auto Vision] ${analysis}`;
         } catch (e) {
             console.warn('[Vision] Auto capture failed:', e.message);
